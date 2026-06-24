@@ -1,21 +1,38 @@
 import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
-import { Badge } from "@/app/src/components/ui/badge";
+import { Badge, statusBadge, priorityBadge } from "@/app/src/components/ui/badge";
 import Link from "next/link";
+import db from "@/app/src/lib/db";
 
-const stats = [
-  { label: "Incidencias Abiertas", value: "12", color: "text-yellow-600" },
-  { label: "En Progreso", value: "5", color: "text-blue-600" },
-  { label: "Resueltas Hoy", value: "3", color: "text-green-600" },
-  { label: "Actividades Programadas", value: "8", color: "text-purple-600" },
-];
+export default async function DashboardPage() {
+  const [openCount, inProgressCount, resolvedTodayCount, activityCount, recentIssues] =
+    await Promise.all([
+      db.issue.count({ where: { status: "OPEN" } }),
+      db.issue.count({ where: { status: "IN_PROGRESS" } }),
+      db.issue.count({
+        where: {
+          status: "RESOLVED",
+          updatedAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        },
+      }),
+      db.activity.count({
+        where: { startDate: { gte: new Date() } },
+      }),
+      db.issue.findMany({
+        take: 5,
+        include: { location: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-const recentIssues = [
-  { id: "1", title: "Proyector dañado en Aula 101", status: "OPEN", priority: "HIGH", location: "Edificio A - 101" },
-  { id: "2", title: "Fallo en conexión WiFi", status: "IN_PROGRESS", priority: "CRITICAL", location: "Biblioteca" },
-  { id: "3", title: "Silla rota en laboratorio", status: "RESOLVED", priority: "LOW", location: "Lab. 3" },
-];
+  const stats = [
+    { label: "Incidencias Abiertas", value: openCount, color: "text-yellow-600" },
+    { label: "En Progreso", value: inProgressCount, color: "text-blue-600" },
+    { label: "Resueltas Hoy", value: resolvedTodayCount, color: "text-green-600" },
+    { label: "Próximas Actividades", value: activityCount, color: "text-purple-600" },
+  ];
 
-export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
@@ -38,28 +55,34 @@ export default function DashboardPage() {
             <CardTitle>Incidencias Recientes</CardTitle>
           </CardHeader>
           <div className="space-y-3">
-            {recentIssues.map((issue) => (
-              <Link
-                key={issue.id}
-                href={`/dashboard/issues/${issue.id}`}
-                className="flex items-center justify-between rounded-lg border border-zinc-100 p-3 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                    {issue.title}
-                  </p>
-                  <p className="text-xs text-zinc-500">{issue.location}</p>
-                </div>
-                <div className="ml-3 flex gap-2">
-                  <Badge variant={issue.status === "OPEN" ? "open" : issue.status === "IN_PROGRESS" ? "in_progress" : "resolved"}>
-                    {issue.status.replace("_", " ")}
-                  </Badge>
-                  <Badge variant={issue.priority === "HIGH" ? "high" : issue.priority === "CRITICAL" ? "critical" : "low"}>
-                    {issue.priority}
-                  </Badge>
-                </div>
-              </Link>
-            ))}
+            {recentIssues.length === 0 ? (
+              <p className="text-sm text-zinc-500">No hay incidencias</p>
+            ) : (
+              recentIssues.map((issue) => (
+                <Link
+                  key={issue.id}
+                  href={`/dashboard/issues/${issue.id}`}
+                  className="flex items-center justify-between rounded-lg border border-zinc-100 p-3 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {issue.title}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {issue.location.building} - {issue.location.room}
+                    </p>
+                  </div>
+                  <div className="ml-3 flex gap-2">
+                    <Badge variant={statusBadge(issue.status)}>
+                      {issue.status.replace("_", " ")}
+                    </Badge>
+                    <Badge variant={priorityBadge(issue.priority)}>
+                      {issue.priority}
+                    </Badge>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </Card>
 
