@@ -4,6 +4,7 @@ import { Badge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getActivityById } from "@/app/src/lib/actions/activities";
+import { DeleteActivityButton } from "./delete-button";
 
 export default async function ActivityDetailPage({
   params,
@@ -23,6 +24,12 @@ export default async function ActivityDetailPage({
         >
           ← Volver a Actividades
         </Link>
+        <div className="flex gap-2">
+          <Link href={`/dashboard/activities/${activity.id}/edit`}>
+            <Button variant="secondary" size="sm">Editar</Button>
+          </Link>
+          <DeleteActivityButton activityId={activity.id} />
+        </div>
       </div>
 
       <Card>
