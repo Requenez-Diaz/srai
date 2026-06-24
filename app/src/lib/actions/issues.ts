@@ -133,6 +133,50 @@ export async function assignIssue(formData: FormData) {
   revalidatePath(`/dashboard/issues/${issueId}`);
 }
 
+export async function updateIssue(_prev: unknown, formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "No autorizado" };
+
+  const issueId = formData.get("issueId") as string;
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const locationId = formData.get("locationId") as string;
+  const priority = formData.get("priority") as string;
+
+  if (!issueId || !title || !locationId || !priority) {
+    return { error: "Completa todos los campos obligatorios" };
+  }
+
+  await db.issue.update({
+    where: { id: issueId },
+    data: { title, description: description || "", locationId, priority: priority as any },
+  });
+
+  await db.issueHistory.create({
+    data: {
+      previousStatus: "OPEN",
+      newStatus: "OPEN",
+      comment: "Incidencia editada",
+      issueId,
+      userId: user.id,
+    },
+  });
+
+  revalidatePath(`/dashboard/issues/${issueId}`);
+  redirect(`/dashboard/issues/${issueId}`);
+}
+
+export async function deleteIssue(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const issueId = formData.get("issueId") as string;
+  if (!issueId) redirect("/dashboard/issues");
+
+  await db.issue.delete({ where: { id: issueId } });
+  redirect("/dashboard/issues");
+}
+
 export async function getSupportUsers() {
   return db.user.findMany({
     where: { role: { in: ["SUPPORT", "ADMIN"] } },

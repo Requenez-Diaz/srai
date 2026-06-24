@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState } from "react";
 import { Button } from "@/app/src/components/ui/button";
 import { Textarea } from "@/app/src/components/ui/textarea";
 import { Select } from "@/app/src/components/ui/select";
-import { updateIssueStatus, assignIssue } from "@/app/src/lib/actions/issues";
+import { updateIssueStatus, assignIssue, deleteIssue } from "@/app/src/lib/actions/issues";
 
 export function IssueActions({
   issueId,
@@ -100,5 +100,31 @@ export function IssueActions({
         </div>
       )}
     </div>
+  );
+}
+
+export function DeleteIssueButton({ issueId }: { issueId: string }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-2">
+        <form action={deleteIssue}>
+          <input type="hidden" name="issueId" value={issueId} />
+          <Button type="submit" variant="danger" size="sm">
+            Confirmar
+          </Button>
+        </form>
+        <Button variant="secondary" size="sm" onClick={() => setConfirming(false)}>
+          Cancelar
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>
+      Eliminar
+    </Button>
   );
 }

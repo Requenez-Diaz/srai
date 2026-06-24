@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
 import { Badge, statusBadge, priorityBadge } from "@/app/src/components/ui/badge";
+import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getIssueById, getSupportUsers } from "@/app/src/lib/actions/issues";
-import { IssueActions } from "./actions";
+import { IssueActions, DeleteIssueButton } from "./actions";
 
 export default async function IssueDetailPage({
   params,
@@ -25,6 +26,14 @@ export default async function IssueDetailPage({
         >
           ← Volver a Incidencias
         </Link>
+        <div className="flex gap-2">
+          <Link href={`/dashboard/issues/${issue.id}/edit`}>
+            <Button variant="secondary" size="sm">
+              Editar
+            </Button>
+          </Link>
+          <DeleteIssueButton issueId={issue.id} />
+        </div>
       </div>
 
       <Card>
