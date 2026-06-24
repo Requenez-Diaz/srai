@@ -2,7 +2,7 @@
 
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "@prisma/client/extension";
+import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
   // Configuración del driver nativo requerido por Prisma 7+

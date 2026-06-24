@@ -26,6 +26,7 @@ model User {
   assignedIssues Issue[]        @relation("AssignedTo")
   activities     Activity[]
   historyActions IssueHistory[]
+  sessions      Session[]
 }
 
 model Location {
@@ -94,4 +95,12 @@ model Activity {
   location    Location @relation(fields: [locationId], references: [id])
   organizerId String
   organizer   User     @relation(fields: [organizerId], references: [id])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
