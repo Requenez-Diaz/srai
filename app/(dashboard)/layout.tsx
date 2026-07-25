@@ -9,6 +9,7 @@ const navItems = [
   { label: "Incidencias", href: "/dashboard/issues", icon: "⚠" },
   { label: "Actividades", href: "/dashboard/activities", icon: "📅" },
   { label: "Ubicaciones", href: "/dashboard/locations", icon: "📍" },
+  { label: "Registro Horas", href: "/dashboard/attendance", icon: "🕐" },
 ];
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
               {item.label}
             </Link>
           ))}
+          {(user.role === "SUPPORT" || user.role === "ADMIN") && (
+            <Link
+              href="/dashboard/users"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+            >
+              <span>👥</span>
+              Usuarios
+            </Link>
+          )}
+          {(user.role === "SUPPORT" || user.role === "ADMIN") && (
+            <Link
+              href="/dashboard/attendance/history"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+            >
+              <span>📊</span>
+              Historial Asistencia
+            </Link>
+          )}
         </nav>
         <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-500">

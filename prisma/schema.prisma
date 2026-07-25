@@ -28,6 +28,7 @@ model User {
   activities     Activity[]
   historyActions IssueHistory[]
   sessions      Session[]
+  attendances   Attendance[]
 }
 
 model Location {
@@ -104,4 +105,18 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id           String    @id @default(uuid())
+  date         DateTime  @db.Date
+  morningIn    DateTime?
+  morningOut   DateTime?
+  afternoonIn  DateTime?
+  afternoonOut DateTime?
+  createdAt    DateTime  @default(now())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }
