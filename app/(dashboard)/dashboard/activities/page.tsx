@@ -3,8 +3,14 @@ import { Badge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getActivities } from "@/app/src/lib/actions/activities";
+import { getCurrentUser } from "@/app/src/lib/auth";
+
+function canCreate(role: string) {
+  return role === "PRACTICANTE" || role === "TEACHER" || role === "SUPPORT" || role === "ADMIN";
+}
 
 export default async function ActivitiesPage() {
+  const user = await getCurrentUser();
   const activities = await getActivities();
 
   return (
@@ -14,15 +20,17 @@ export default async function ActivitiesPage() {
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Actividades</h2>
           <p className="text-sm text-zinc-500">Calendario de actividades académicas</p>
         </div>
-        <Link href="/dashboard/activities/new">
-          <Button>Nueva Actividad</Button>
-        </Link>
+        {user && canCreate(user.role) && (
+          <Link href="/dashboard/activities/new">
+            <Button>Nueva Actividad</Button>
+          </Link>
+        )}
       </div>
 
       {activities.length === 0 ? (
         <Card>
           <p className="text-center text-sm text-zinc-500">
-            No hay actividades registradas. Crea la primera.
+            No hay actividades registradas.
           </p>
         </Card>
       ) : (

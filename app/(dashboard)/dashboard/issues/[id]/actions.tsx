@@ -10,16 +10,17 @@ export function IssueActions({
   issueId,
   currentStatus,
   supportUsers,
+  isSupport,
 }: {
   issueId: string;
   currentStatus: string;
   supportUsers: { id: string; name: string; email: string; role: string }[];
+  isSupport: boolean;
 }) {
   const [statusState, statusAction, statusPending] = useActionState(
     async (_prev: unknown, formData: FormData) => {
       formData.set("issueId", issueId);
-      const result = await updateIssueStatus(formData);
-      return result;
+      return await updateIssueStatus(formData);
     },
     undefined,
   );
@@ -27,8 +28,7 @@ export function IssueActions({
   const [assignState, assignAction, assignPending] = useActionState(
     async (_prev: unknown, formData: FormData) => {
       formData.set("issueId", issueId);
-      const result = await assignIssue(formData);
-      return result;
+      return await assignIssue(formData);
     },
     undefined,
   );
@@ -64,7 +64,7 @@ export function IssueActions({
         <form action={statusAction} className="space-y-2">
           <Textarea
             name="comment"
-            placeholder="Escribe un comentario sobre el cambio de estado..."
+            placeholder="Escribe un comentario..."
             rows={2}
           />
           <input type="hidden" name="status" value={currentStatus} />
@@ -74,7 +74,7 @@ export function IssueActions({
         </form>
       </div>
 
-      {supportUsers.length > 0 && (
+      {isSupport && supportUsers.length > 0 && (
         <div>
           <h4 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Asignar a Soporte

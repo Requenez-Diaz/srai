@@ -3,8 +3,13 @@ import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
 import { Badge, statusBadge, priorityBadge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
+import { getCurrentUser } from "@/app/src/lib/auth";
 import { getIssueById, getSupportUsers } from "@/app/src/lib/actions/issues";
 import { IssueActions, DeleteIssueButton } from "./actions";
+
+function canManageAll(role: string) {
+  return role === "SUPPORT" || role === "ADMIN";
+}
 
 export default async function IssueDetailPage({
   params,
@@ -15,6 +20,9 @@ export default async function IssueDetailPage({
   const issue = await getIssueById(id);
   if (!issue) notFound();
 
+  const user = await getCurrentUser();
+  const isOwner = user?.id === issue.reportedById;
+  const canEdit = canManageAll(user?.role ?? "") || isOwner;
   const supportUsers = await getSupportUsers();
 
   return (
@@ -26,14 +34,14 @@ export default async function IssueDetailPage({
         >
           ← Volver a Incidencias
         </Link>
-        <div className="flex gap-2">
-          <Link href={`/dashboard/issues/${issue.id}/edit`}>
-            <Button variant="secondary" size="sm">
-              Editar
-            </Button>
-          </Link>
-          <DeleteIssueButton issueId={issue.id} />
-        </div>
+        {canEdit && (
+          <div className="flex gap-2">
+            <Link href={`/dashboard/issues/${issue.id}/edit`}>
+              <Button variant="secondary" size="sm">Editar</Button>
+            </Link>
+            <DeleteIssueButton issueId={issue.id} />
+          </div>
+        )}
       </div>
 
       <Card>
@@ -57,7 +65,7 @@ export default async function IssueDetailPage({
           <div>
             <h4 className="mb-1 text-sm font-medium text-zinc-500">Descripción</h4>
             <p className="text-sm text-zinc-900 dark:text-zinc-100">
-              {issue.description ?? "Sin descripción"}
+              {issue.description || "Sin descripción"}
             </p>
           </div>
 
@@ -93,7 +101,12 @@ export default async function IssueDetailPage({
         <CardHeader>
           <CardTitle>Acciones</CardTitle>
         </CardHeader>
-        <IssueActions issueId={issue.id} currentStatus={issue.status} supportUsers={supportUsers} />
+        <IssueActions
+          issueId={issue.id}
+          currentStatus={issue.status}
+          supportUsers={supportUsers}
+          isSupport={canManageAll(user?.role ?? "")}
+        />
       </Card>
 
       <Card>

@@ -3,8 +3,13 @@ import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
 import { Badge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
+import { getCurrentUser } from "@/app/src/lib/auth";
 import { getActivityById } from "@/app/src/lib/actions/activities";
 import { DeleteActivityButton } from "./delete-button";
+
+function canManageAll(role: string) {
+  return role === "SUPPORT" || role === "ADMIN";
+}
 
 export default async function ActivityDetailPage({
   params,
@@ -15,6 +20,10 @@ export default async function ActivityDetailPage({
   const activity = await getActivityById(id);
   if (!activity) notFound();
 
+  const user = await getCurrentUser();
+  const isOwner = user?.id === activity.organizerId;
+  const canEdit = user && (canManageAll(user.role) || isOwner);
+
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
@@ -24,12 +33,14 @@ export default async function ActivityDetailPage({
         >
           ← Volver a Actividades
         </Link>
-        <div className="flex gap-2">
-          <Link href={`/dashboard/activities/${activity.id}/edit`}>
-            <Button variant="secondary" size="sm">Editar</Button>
-          </Link>
-          <DeleteActivityButton activityId={activity.id} />
-        </div>
+        {canEdit && (
+          <div className="flex gap-2">
+            <Link href={`/dashboard/activities/${activity.id}/edit`}>
+              <Button variant="secondary" size="sm">Editar</Button>
+            </Link>
+            <DeleteActivityButton activityId={activity.id} />
+          </div>
+        )}
       </div>
 
       <Card>

@@ -5,15 +5,28 @@ import { revalidatePath } from "next/cache";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
 
+function canManageAll(role: string) {
+  return role === "SUPPORT" || role === "ADMIN";
+}
+
 export async function getIssues() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const where = canManageAll(user.role) ? {} : { reportedById: user.id };
+
   return db.issue.findMany({
+    where,
     include: { location: true, reportedBy: true, assignedTo: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
 export async function getIssueById(id: string) {
-  return db.issue.findUnique({
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const issue = await db.issue.findUnique({
     where: { id },
     include: {
       location: true,
@@ -25,6 +38,14 @@ export async function getIssueById(id: string) {
       },
     },
   });
+
+  if (!issue) return null;
+
+  if (!canManageAll(user.role) && issue.reportedById !== user.id) {
+    return null;
+  }
+
+  return issue;
 }
 
 export async function createIssue(_prev: unknown, formData: FormData) {
@@ -76,6 +97,10 @@ export async function updateIssueStatus(formData: FormData) {
   const issue = await db.issue.findUnique({ where: { id: issueId } });
   if (!issue) return { error: "Incidencia no encontrada" };
 
+  if (!canManageAll(user.role) && issue.reportedById !== user.id) {
+    return { error: "No tienes permiso para modificar esta incidencia" };
+  }
+
   await db.issue.update({
     where: { id: issueId },
     data: { status: newStatus as any },
@@ -97,6 +122,10 @@ export async function updateIssueStatus(formData: FormData) {
 export async function assignIssue(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) return { error: "No autorizado" };
+
+  if (!canManageAll(user.role)) {
+    return { error: "Solo soporte o admin pueden asignar incidencias" };
+  }
 
   const issueId = formData.get("issueId") as string;
   const assignedToId = formData.get("assignedToId") as string;
@@ -123,7 +152,7 @@ export async function assignIssue(formData: FormData) {
     },
   });
 
-  if (user.role !== "ADMIN" && user.role !== "SUPPORT") {
+  if (!canManageAll(user.role)) {
     await db.issue.update({
       where: { id: issueId },
       data: { status: "IN_PROGRESS" },
@@ -145,6 +174,13 @@ export async function updateIssue(_prev: unknown, formData: FormData) {
 
   if (!issueId || !title || !locationId || !priority) {
     return { error: "Completa todos los campos obligatorios" };
+  }
+
+  const issue = await db.issue.findUnique({ where: { id: issueId } });
+  if (!issue) return { error: "Incidencia no encontrada" };
+
+  if (!canManageAll(user.role) && issue.reportedById !== user.id) {
+    return { error: "No tienes permiso para editar esta incidencia" };
   }
 
   await db.issue.update({
@@ -173,6 +209,13 @@ export async function deleteIssue(formData: FormData) {
   const issueId = formData.get("issueId") as string;
   if (!issueId) redirect("/dashboard/issues");
 
+  const issue = await db.issue.findUnique({ where: { id: issueId } });
+  if (!issue) redirect("/dashboard/issues");
+
+  if (!canManageAll(user.role) && issue.reportedById !== user.id) {
+    redirect("/dashboard/issues");
+  }
+
   await db.issue.delete({ where: { id: issueId } });
   redirect("/dashboard/issues");
 }
@@ -182,4 +225,9 @@ export async function getSupportUsers() {
     where: { role: { in: ["SUPPORT", "ADMIN"] } },
     select: { id: true, name: true, email: true, role: true },
   });
+}
+
+export async function getCurrentUserRole() {
+  const user = await getCurrentUser();
+  return user?.role ?? null;
 }

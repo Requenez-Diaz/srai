@@ -2,24 +2,34 @@ import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
 import { Badge, statusBadge, priorityBadge } from "@/app/src/components/ui/badge";
 import Link from "next/link";
 import db from "@/app/src/lib/db";
+import { getCurrentUser } from "@/app/src/lib/auth";
+
+function canManageAll(role: string) {
+  return role === "SUPPORT" || role === "ADMIN";
+}
 
 export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const myFilter = canManageAll(user.role) ? {} : { reportedById: user.id };
+
   const [openCount, inProgressCount, resolvedTodayCount, activityCount, recentIssues] =
     await Promise.all([
-      db.issue.count({ where: { status: "OPEN" } }),
-      db.issue.count({ where: { status: "IN_PROGRESS" } }),
+      db.issue.count({ where: { status: "OPEN", ...myFilter } }),
+      db.issue.count({ where: { status: "IN_PROGRESS", ...myFilter } }),
       db.issue.count({
         where: {
           status: "RESOLVED",
-          updatedAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
+          updatedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          ...myFilter,
         },
       }),
       db.activity.count({
         where: { startDate: { gte: new Date() } },
       }),
       db.issue.findMany({
+        where: myFilter,
         take: 5,
         include: { location: true },
         orderBy: { createdAt: "desc" },

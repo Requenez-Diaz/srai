@@ -4,6 +4,14 @@ import { redirect } from "next/navigation";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
 
+function canManageAll(role: string) {
+  return role === "SUPPORT" || role === "ADMIN";
+}
+
+function canCreateActivities(role: string) {
+  return role === "PRACTICANTE" || role === "TEACHER" || role === "SUPPORT" || role === "ADMIN";
+}
+
 export async function getActivities() {
   return db.activity.findMany({
     include: { location: true, organizer: true },
@@ -21,6 +29,7 @@ export async function getActivityById(id: string) {
 export async function createActivity(_prev: unknown, formData: FormData) {
   const user = await getCurrentUser();
   if (!user) return { error: "No autorizado" };
+  if (!canCreateActivities(user.role)) return { error: "Solo docentes y soporte pueden crear actividades" };
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -76,6 +85,13 @@ export async function updateActivity(_prev: unknown, formData: FormData) {
     return { error: "Todos los campos obligatorios deben estar llenos" };
   }
 
+  const activity = await db.activity.findUnique({ where: { id } });
+  if (!activity) return { error: "Actividad no encontrada" };
+
+  if (!canManageAll(user.role) && activity.organizerId !== user.id) {
+    return { error: "No tienes permiso para editar esta actividad" };
+  }
+
   const start = new Date(`${startDate}T${startTime}:00`);
   const end = new Date(`${endDate}T${endTime}:00`);
 
@@ -108,6 +124,18 @@ export async function deleteActivity(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) redirect("/dashboard/activities");
 
+  const activity = await db.activity.findUnique({ where: { id } });
+  if (!activity) redirect("/dashboard/activities");
+
+  if (!canManageAll(user.role) && activity.organizerId !== user.id) {
+    redirect("/dashboard/activities");
+  }
+
   await db.activity.delete({ where: { id } });
   redirect("/dashboard/activities");
+}
+
+export async function getCurrentUserRole() {
+  const user = await getCurrentUser();
+  return user?.role ?? null;
 }

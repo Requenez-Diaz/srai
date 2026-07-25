@@ -29,6 +29,7 @@ export default function RegisterPage() {
         <Input label="Correo electrónico" name="email" type="email" placeholder="correo@ejemplo.com" required />
         <Input label="Contraseña" name="password" type="password" placeholder="Mínimo 6 caracteres" required minLength={6} />
         <Select label="Rol" name="role">
+          <option value="PRACTICANTE">Practicante</option>
           <option value="STUDENT">Estudiante</option>
           <option value="TEACHER">Docente</option>
           <option value="SUPPORT">Soporte</option>
