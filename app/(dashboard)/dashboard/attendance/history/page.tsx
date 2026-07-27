@@ -2,6 +2,7 @@ import { Card } from "@/app/src/components/ui/card";
 import { Badge } from "@/app/src/components/ui/badge";
 import { getAllAttendance } from "@/app/src/lib/actions/attendance";
 import { getCurrentUser } from "@/app/src/lib/auth";
+import { AttendanceModal } from "./attendance-modal";
 
 function formatTime(date: Date | null) {
   if (!date) return "--:--";
@@ -76,10 +77,11 @@ export default async function AttendanceHistoryPage() {
                     >
                       {(user?.role === "SUPPORT" || user?.role === "ADMIN") && (
                         <td className="px-4 py-3">
-                          <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                            {record.user.name}
-                          </p>
-                          <p className="text-xs text-zinc-400">{roleLabel(record.user.role)}</p>
+                          <AttendanceModal
+                            userId={record.user.id}
+                            userName={record.user.name}
+                            userRole={roleLabel(record.user.role)}
+                          />
                         </td>
                       )}
                       <td className="px-4 py-3 text-zinc-500">

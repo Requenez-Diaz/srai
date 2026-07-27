@@ -116,3 +116,59 @@ export async function getAllAttendance() {
     orderBy: { date: "desc" },
   });
 }
+
+const PAGE_SIZE = 10;
+
+export async function getAttendanceByUser(userId: string, page: number = 1) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "SUPPORT" && user.role !== "ADMIN")) {
+    return { records: [], totalPages: 0, page: 1, user: null };
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, role: true },
+  });
+
+  if (!targetUser) return { records: [], totalPages: 0, page: 1, user: null };
+
+  const skip = (page - 1) * PAGE_SIZE;
+
+  const [records, total] = await Promise.all([
+    db.attendance.findMany({
+      where: { userId },
+      orderBy: { date: "desc" },
+      skip,
+      take: PAGE_SIZE,
+    }),
+    db.attendance.count({ where: { userId } }),
+  ]);
+
+  return {
+    records,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+    page,
+    user: targetUser,
+  };
+}
+
+export async function getAllAttendanceByUser(userId: string) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "SUPPORT" && user.role !== "ADMIN")) {
+    return { records: [], user: null };
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, role: true },
+  });
+
+  if (!targetUser) return { records: [], user: null };
+
+  const records = await db.attendance.findMany({
+    where: { userId },
+    orderBy: { date: "desc" },
+  });
+
+  return { records, user: targetUser };
+}
