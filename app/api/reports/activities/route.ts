@@ -1,31 +1,15 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
-import { ACTIVITY_TYPE_LABELS, resolvePeriod } from "@/app/src/lib/activity-types";
+import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
 import { getActivityReport } from "@/app/src/lib/actions/reports";
+import {
+  addGroupedDetailSheet,
+  round,
+  styleHeader,
+  writeTitleBlock,
+} from "@/app/src/lib/reports/excel";
 
 export const dynamic = "force-dynamic";
-
-const HEADER_FILL: ExcelJS.Fill = {
-  type: "pattern",
-  pattern: "solid",
-  fgColor: { argb: "FF18181B" },
-};
-
-const HEADER_FONT: Partial<ExcelJS.Font> = {
-  bold: true,
-  color: { argb: "FFFFFFFF" },
-};
-
-function styleHeader(row: ExcelJS.Row) {
-  row.font = HEADER_FONT;
-  row.fill = HEADER_FILL;
-  row.alignment = { vertical: "middle", horizontal: "center" };
-  row.height = 22;
-}
-
-function round(value: number) {
-  return Math.round(value * 10) / 10;
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -37,10 +21,7 @@ export async function GET(request: Request) {
   });
 
   if (!report) {
-    return NextResponse.json(
-      { error: "No autorizado" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const { period, categories } = report;
@@ -48,51 +29,49 @@ export async function GET(request: Request) {
   workbook.creator = "SRAI";
   workbook.created = report.generatedAt;
 
-  const currencySafeNumber = (value: number) => value;
-
-  // Hoja 1: resumen por categoría
+  // Hoja 1: resumen por categoría (incluye los nombres de las actividades)
   const summary = workbook.addWorksheet("Resumen por categoría", {
-    views: [{ state: "frozen", ySplit: 5 }],
+    views: [{ state: "frozen", xSplit: 1, ySplit: 5 }],
   });
 
   summary.columns = [
     { key: "title", width: 26 },
-    { key: "count", width: 14 },
+    { key: "count", width: 12 },
     { key: "percent", width: 14 },
-    { key: "hours", width: 16 },
+    { key: "hours", width: 12 },
+    { key: "names", width: 58 },
   ];
 
-  summary.mergeCells("A1:D1");
-  const titleCell = summary.getCell("A1");
-  titleCell.value = "Reporte de Actividades por Tipo";
-  titleCell.font = { bold: true, size: 14 };
-
-  summary.mergeCells("A2:D2");
-  summary.getCell("A2").value = `Período: ${period.label}`;
-  summary.getCell("A2").font = { bold: true };
-
-  summary.mergeCells("A3:D3");
-  summary.getCell("A3").value = `Rango: ${period.rangeLabel}`;
-
-  summary.mergeCells("A4:D4");
-  summary.getCell("A4").value = `Generado: ${report.generatedAt.toLocaleString("es-MX")}`;
+  writeTitleBlock(summary, {
+    title: "Reporte de Actividades por Tipo",
+    periodLabel: period.label,
+    rangeLabel: period.rangeLabel,
+    generatedAt: report.generatedAt,
+    columns: 5,
+  });
 
   const summaryHeader = summary.getRow(5);
-  summaryHeader.values = ["Tipo de actividad", "Cantidad", "% del total", "Horas"];
+  summaryHeader.values = [
+    "Tipo de actividad",
+    "Cantidad",
+    "% del total",
+    "Horas",
+    "Actividades",
+  ];
   styleHeader(summaryHeader);
 
   report.byCategory.forEach((entry) => {
     const row = summary.addRow([
       entry.label,
-      currencySafeNumber(entry.count),
-      report.totals.activities
-        ? round((entry.count / report.totals.activities) * 100)
-        : 0,
+      entry.count,
+      report.totals.activities ? round((entry.count / report.totals.activities) * 100) : 0,
       entry.hours,
+      entry.titles.join("\n") || "-",
     ]);
     row.getCell(2).numFmt = "0";
     row.getCell(3).numFmt = '0.0"%"';
     row.getCell(4).numFmt = "0.0";
+    row.getCell(5).alignment = { vertical: "top", wrapText: true };
   });
 
   const summaryTotal = summary.addRow([
@@ -100,6 +79,7 @@ export async function GET(request: Request) {
     report.totals.activities,
     report.totals.activities ? 100 : 0,
     report.totals.hours,
+    `${report.totals.activities} actividad(es) - ${report.totals.people} persona(s)`,
   ]);
   summaryTotal.font = { bold: true };
   summaryTotal.getCell(2).numFmt = "0";
@@ -109,7 +89,7 @@ export async function GET(request: Request) {
     cell.border = { top: { style: "double" } };
   });
 
-  summary.autoFilter = { from: "A5", to: "D5" };
+  summary.autoFilter = { from: "A5", to: "E5" };
 
   // Hoja 2: matriz persona x categoría
   const byPerson = workbook.addWorksheet("Por persona", {
@@ -128,12 +108,7 @@ export async function GET(request: Request) {
     { key: "hours", width: 14 },
   ];
 
-  byPerson.mergeCells(
-    1,
-    1,
-    1,
-    3 + categories.length + 2,
-  );
+  byPerson.mergeCells(1, 1, 1, 3 + categories.length + 2);
   byPerson.getCell(1, 1).value = `Actividades por persona - ${period.label}`;
   byPerson.getCell(1, 1).font = { bold: true, size: 13 };
 
@@ -182,7 +157,27 @@ export async function GET(request: Request) {
     cell.border = { top: { style: "double" } };
   });
 
-  // Hoja 3: detalle
+  // Hoja 3: nombre de cada actividad agrupado por persona y tipo
+  addGroupedDetailSheet(workbook, {
+    sheetName: "Actividades por persona",
+    title: `Actividades por persona y tipo - ${period.label}`,
+    periodLabel: period.label,
+    rangeLabel: period.rangeLabel,
+    generatedAt: report.generatedAt,
+    groupLabels: ["Tipo"],
+    entityLabel: "Actividad",
+    measureLabel: "Horas",
+    rows: report.details.map((entry) => ({
+      person: entry.organizer,
+      role: report.byPerson.find((p) => p.name === entry.organizer)?.role ?? "",
+      groupValues: [entry.typeLabel],
+      name: entry.title,
+      date: entry.startDate,
+      measure: entry.hours,
+    })),
+  });
+
+  // Hoja 4: detalle
   const detail = workbook.addWorksheet("Detalle", {
     views: [{ state: "frozen", ySplit: 2 }],
   });
@@ -228,15 +223,7 @@ export async function GET(request: Request) {
     row.getCell(7).numFmt = "0.0";
   });
 
-  const detailTotal = detail.addRow([
-    "",
-    "",
-    "TOTAL",
-    "",
-    "",
-    "",
-    report.totals.hours,
-  ]);
+  const detailTotal = detail.addRow(["", "", "TOTAL", "", "", "", report.totals.hours]);
   detailTotal.font = { bold: true };
   detailTotal.getCell(7).numFmt = "0.0";
   detailTotal.eachCell((cell) => {
@@ -249,17 +236,12 @@ export async function GET(request: Request) {
 
   const buffer = await workbook.xlsx.writeBuffer();
 
-  const fileName = `reporte_actividades_${resolvePeriod({
-    kind: period.kind,
-    year: String(period.year),
-    period: String(period.period),
-  }).shortLabel.replace(/\s+/g, "_")}.xlsx`;
+  const fileName = `reporte_actividades_${period.shortLabel.replace(/\s+/g, "_")}.xlsx`;
 
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
-      "Content-Type":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${fileName}"`,
       "Cache-Control": "no-store",
     },

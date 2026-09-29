@@ -1,26 +1,27 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/app/src/lib/auth";
-import { getActivityReport } from "@/app/src/lib/actions/reports";
-import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
-import { Badge } from "@/app/src/components/ui/badge";
+import { getActivityReport, getIssueReport } from "@/app/src/lib/actions/reports";
 import { Button } from "@/app/src/components/ui/button";
 import {
   ACTIVITY_TYPE_LABELS,
+  ISSUE_PRIORITY_LABELS,
+  ISSUE_STATUS_LABELS,
   canAccessReports,
-  getAvailableYears,
-  getPeriodOptions,
-  type PeriodKind,
+  type ResolvedPeriod,
 } from "@/app/src/lib/activity-types";
+import {
+  CategoryBreakdown,
+  DetailList,
+  PeriodForm,
+  PersonMatrix,
+  StatCards,
+  buildQuery,
+} from "./report-parts";
 
-function buildQuery(kind: PeriodKind, year: number, period: number) {
-  const params = new URLSearchParams({
-    kind,
-    year: String(year),
-    period: String(period),
-  });
-  return params.toString();
-}
+const TABS = [
+  { value: "actividades", label: "Actividades" },
+  { value: "incidencias", label: "Incidencias" },
+] as const;
 
 export default async function ReportsPage({
   searchParams,
@@ -29,6 +30,7 @@ export default async function ReportsPage({
     kind?: string;
     year?: string;
     period?: string;
+    reporte?: string;
   }>;
 }) {
   const user = await getCurrentUser();
@@ -36,341 +38,239 @@ export default async function ReportsPage({
   if (!canAccessReports(user.role)) redirect("/dashboard");
 
   const params = await searchParams;
-  const report = await getActivityReport(params);
+  const tab = params.reporte === "incidencias" ? "incidencias" : "actividades";
+  const query = { kind: params.kind, year: params.year, period: params.period };
+
+  const header = (title: string, subtitle: string, p: ResolvedPeriod, tab: string) => (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">
+          {title}
+        </h2>
+        <p className="text-sm text-zinc-500">{subtitle}</p>
+      </div>
+      <a
+        href={`/api/reports/${tab === "incidencias" ? "incidents" : "activities"}?${buildQuery(
+          p.kind,
+          p.year,
+          p.period,
+          tab,
+        )}`}
+        className="shrink-0 self-start sm:self-auto"
+        data-testid="download-report"
+      >
+        <Button className="w-full sm:w-auto">Descargar Excel</Button>
+      </a>
+    </div>
+  );
+
+  const tabs = (p: ResolvedPeriod, current: string) => (
+    <div className="flex gap-2 overflow-x-auto">
+      {TABS.map((item) => {
+        const isActive = item.value === current;
+        return (
+          <a
+            key={item.value}
+            href={`/dashboard/reports?${buildQuery(p.kind, p.year, p.period, item.value)}`}
+            className={
+              isActive
+                ? "shrink-0 rounded-full bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+                : "shrink-0 rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            }
+          >
+            {item.label}
+          </a>
+        );
+      })}
+    </div>
+  );
+
+  if (tab === "incidencias") {
+    const report = await getIssueReport(query);
+    if (!report) redirect("/dashboard");
+
+    const { period } = report;
+
+    return (
+      <div className="space-y-6">
+        {header(
+          "Reportes de Incidencias",
+          "Cantidad de incidencias por estado y prioridad, y por persona",
+          period,
+          tab,
+        )}
+        {tabs(period, tab)}
+
+        <PeriodForm
+          kind={period.kind}
+          year={period.year}
+          period={period.period}
+          report={tab}
+          rangeLabel={period.rangeLabel}
+          periodLabel={period.label}
+        />
+
+        <StatCards
+          items={[
+            { label: "Incidencias reportadas", value: String(report.totals.issues) },
+            { label: "Personas que reportaron", value: String(report.totals.people) },
+            { label: "Pendientes / resueltas", value: `${report.totals.pending} / ${report.totals.resolved}` },
+          ]}
+        />
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CategoryBreakdown
+            title="Incidencias por estado"
+            emptyText="No hay incidencias registradas en este período."
+            total={report.totals.issues}
+            entries={report.byStatus.map((entry) => ({
+              key: entry.key,
+              label: entry.label,
+              count: entry.count,
+              names: entry.titles,
+            }))}
+          />
+          <CategoryBreakdown
+            title="Incidencias por prioridad"
+            emptyText="No hay incidencias registradas en este período."
+            total={report.totals.issues}
+            entries={report.byPriority.map((entry) => ({
+              key: entry.key,
+              label: entry.label,
+              count: entry.count,
+              names: entry.titles,
+            }))}
+          />
+        </div>
+
+        <PersonMatrix
+          title="Incidencias por persona (estado)"
+          emptyText="No hay incidencias registradas en este período."
+          unit="inc."
+          columns={report.statuses.map((status) => ({
+            key: status,
+            label: ISSUE_STATUS_LABELS[status],
+          }))}
+          people={report.byPersonStatus}
+          columnTotals={report.statuses.map(
+            (status) => report.byStatus.find((entry) => entry.key === status)?.count ?? 0,
+          )}
+          grandTotal={report.totals.issues}
+        />
+
+        <PersonMatrix
+          title="Incidencias por persona (prioridad)"
+          emptyText="No hay incidencias registradas en este período."
+          unit="inc."
+          columns={report.priorities.map((priority) => ({
+            key: priority,
+            label: ISSUE_PRIORITY_LABELS[priority],
+          }))}
+          people={report.byPersonPriority}
+          columnTotals={report.priorities.map(
+            (priority) => report.byPriority.find((entry) => entry.key === priority)?.count ?? 0,
+          )}
+          grandTotal={report.totals.issues}
+        />
+
+        <DetailList
+          title="Detalle de incidencias"
+          emptyText="No hay incidencias registradas en este período."
+          items={report.details.map((entry) => ({
+            id: entry.id,
+            title: entry.title,
+            href: `/dashboard/issues/${entry.id}`,
+            subtitle: `${entry.createdAt.toLocaleString("es-MX")} · ${entry.location} · Reportada por ${entry.reportedBy}${entry.assignedTo ? ` · Asignada a ${entry.assignedTo}` : ""}`,
+            badges: [entry.statusLabel, entry.priorityLabel],
+            badgeTone: "default",
+          }))}
+        />
+      </div>
+    );
+  }
+
+  const report = await getActivityReport(query);
   if (!report) redirect("/dashboard");
 
   const { period } = report;
-  const periodOptions = getPeriodOptions(period.kind);
-  const years = getAvailableYears(period.year);
-  const currentQuery = buildQuery(period.kind, period.year, period.period);
-  const downloadHref = `/api/reports/activities?${currentQuery}`;
-
-  const maxCount = Math.max(1, ...report.byCategory.map((entry) => entry.count));
-  const maxPersonCount = Math.max(1, ...report.byPerson.map((p) => p.total));
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">
-            Reportes de Actividades
-          </h2>
-          <p className="text-sm text-zinc-500">
-            Cantidad de actividades por tipo y por persona
-          </p>
-        </div>
-        <a
-          href={downloadHref}
-          className="shrink-0 self-start sm:self-auto"
-          data-testid="download-report"
-        >
-          <Button className="w-full sm:w-auto">Descargar Excel</Button>
-        </a>
-      </div>
+      {header(
+        "Reportes de Actividades",
+        "Cantidad de actividades por tipo y por persona",
+        period,
+        tab,
+      )}
+      {tabs(period, tab)}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Período del reporte</CardTitle>
-        </CardHeader>
-        <form method="get" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Tipo de período
-            </label>
-            <select
-              name="kind"
-              defaultValue={period.kind}
-              className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-            >
-              <option value="monthly">Mensual</option>
-              <option value="quarterly">Trimestral</option>
-            </select>
-          </div>
+      <PeriodForm
+        kind={period.kind}
+        year={period.year}
+        period={period.period}
+        report={tab}
+        rangeLabel={period.rangeLabel}
+        periodLabel={period.label}
+      />
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {period.kind === "quarterly" ? "Trimestre" : "Mes"}
-            </label>
-            <select
-              key={`${period.kind}-${period.year}`}
-              name="period"
-              defaultValue={String(period.period)}
-              className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-            >
-              {periodOptions.map((option, index) => (
-                <option key={option} value={index + 1}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
+      <StatCards
+        items={[
+          { label: "Actividades realizadas", value: String(report.totals.activities) },
+          { label: "Personas con actividades", value: String(report.totals.people) },
+          { label: "Horas acumuladas", value: `${report.totals.hours}h` },
+        ]}
+      />
 
-          <div className="space-y-1">
-            <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Año
-            </label>
-            <select
-              name="year"
-              defaultValue={String(period.year)}
-              className="w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-            >
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
+      <CategoryBreakdown
+        title="Cantidad por tipo de actividad"
+        emptyText="No hay actividades registradas en este período."
+        total={report.totals.activities}
+        entries={report.byCategory.map((entry) => ({
+          key: entry.type,
+          label: entry.label,
+          count: entry.count,
+          names: entry.titles,
+          sublabel: `${entry.hours} horas`,
+        }))}
+      />
 
-          <div className="sm:col-span-3">
-            <Button type="submit" className="w-full sm:w-auto">
-              Aplicar
-            </Button>
-          </div>
-        </form>
-
-        <p className="mt-4 text-sm text-zinc-500">
-          Periodo seleccionado: <span className="font-medium text-zinc-900 dark:text-zinc-50">{period.label}</span>{" "}
-          ({period.rangeLabel})
-        </p>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-sm text-zinc-500">Actividades realizadas</p>
-          <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            {report.totals.activities}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-sm text-zinc-500">Personas con actividades</p>
-          <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            {report.totals.people}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-sm text-zinc-500">Horas acumuladas</p>
-          <p className="mt-1 text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-            {report.totals.hours}h
-          </p>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Cantidad por tipo de actividad</CardTitle>
-        </CardHeader>
-        {report.totals.activities === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No hay actividades registradas en este período.
-          </p>
-        ) : (
-          <ul className="space-y-4">
-            {report.byCategory.map((entry) => {
-              const percent = report.totals.activities
-                ? Math.round((entry.count / report.totals.activities) * 100)
-                : 0;
-              return (
-                <li key={entry.type} className="space-y-1">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate text-zinc-700 dark:text-zinc-300">
-                      {entry.label}
-                    </span>
-                    <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-50">
-                      {entry.count} ({percent}%)
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div
-                      className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100"
-                      style={{ width: `${(entry.count / maxCount) * 100}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-zinc-400">{entry.hours} horas</p>
-                </li>
-              );
-            })}
-          </ul>
+      <PersonMatrix
+        title="Actividades por persona"
+        emptyText="No hay actividades registradas en este período."
+        unit="act."
+        extraLabel="Horas"
+        extraTotals={`${report.totals.hours}h`}
+        columns={report.categories.map((type) => ({
+          key: type,
+          label: ACTIVITY_TYPE_LABELS[type],
+        }))}
+        people={report.byPerson.map((person) => ({
+          userId: person.userId,
+          name: person.name,
+          role: person.role,
+          faculty: person.faculty,
+          counts: person.counts,
+          total: person.total,
+          extra: `${person.hours}h`,
+        }))}
+        columnTotals={report.categories.map(
+          (type) => report.byCategory.find((entry) => entry.type === type)?.count ?? 0,
         )}
-      </Card>
+        grandTotal={report.totals.activities}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Actividades por persona</CardTitle>
-        </CardHeader>
-        {report.byPerson.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No hay actividades registradas en este período.
-          </p>
-        ) : (
-          <>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                    <th className="px-3 py-3 text-left font-medium text-zinc-500">
-                      Persona
-                    </th>
-                    <th className="px-3 py-3 text-left font-medium text-zinc-500">
-                      Rol
-                    </th>
-                    {report.categories.map((type) => (
-                      <th
-                        key={type}
-                        className="px-3 py-3 text-right font-medium text-zinc-500"
-                      >
-                        {ACTIVITY_TYPE_LABELS[type]}
-                      </th>
-                    ))}
-                    <th className="px-3 py-3 text-right font-medium text-zinc-500">
-                      Total
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium text-zinc-500">
-                      Horas
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.byPerson.map((person) => (
-                    <tr
-                      key={person.userId}
-                      className="border-b border-zinc-100 dark:border-zinc-800"
-                    >
-                      <td className="px-3 py-3">
-                        <p className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {person.name}
-                        </p>
-                        {person.faculty && (
-                          <p className="text-xs text-zinc-500">{person.faculty}</p>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        <Badge variant="default">{person.role}</Badge>
-                      </td>
-                      {report.categories.map((type) => (
-                        <td
-                          key={type}
-                          className="px-3 py-3 text-right text-zinc-700 dark:text-zinc-300"
-                        >
-                          {person.counts[type] ?? 0}
-                        </td>
-                      ))}
-                      <td className="px-3 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-50">
-                        {person.total}
-                      </td>
-                      <td className="px-3 py-3 text-right text-zinc-700 dark:text-zinc-300">
-                        {person.hours}h
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-zinc-200 dark:border-zinc-800">
-                    <td className="px-3 py-3 font-semibold text-zinc-900 dark:text-zinc-50">
-                      TOTAL
-                    </td>
-                    <td className="px-3 py-3" />
-                    {report.categories.map((type) => (
-                      <td
-                        key={type}
-                        className="px-3 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-50"
-                      >
-                        {report.byCategory.find((c) => c.type === type)?.count ?? 0}
-                      </td>
-                    ))}
-                    <td className="px-3 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-50">
-                      {report.totals.activities}
-                    </td>
-                    <td className="px-3 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-50">
-                      {report.totals.hours}h
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div className="space-y-3 sm:hidden">
-              {report.byPerson.map((person) => (
-                <div
-                  key={person.userId}
-                  className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
-                        {person.name}
-                      </p>
-                      <p className="text-xs text-zinc-500">{person.role}</p>
-                    </div>
-                    <Badge variant="default">{person.total} act.</Badge>
-                  </div>
-                  <div className="mt-3 space-y-1">
-                    {report.categories.map((type) => {
-                      const count = person.counts[type] ?? 0;
-                      if (!count) return null;
-                      return (
-                        <div
-                          key={type}
-                          className="flex items-center justify-between gap-3 text-xs"
-                        >
-                          <span className="truncate text-zinc-500">
-                            {ACTIVITY_TYPE_LABELS[type]}
-                          </span>
-                          <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-50">
-                            {count}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <div
-                      className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100"
-                      style={{ width: `${(person.total / maxPersonCount) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalle de actividades</CardTitle>
-        </CardHeader>
-        {report.details.length === 0 ? (
-          <p className="text-sm text-zinc-500">
-            No hay actividades registradas en este período.
-          </p>
-        ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {report.details.map((entry) => (
-              <li key={entry.id} className="py-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/dashboard/activities/${entry.id}`}
-                      className="font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-400"
-                    >
-                      {entry.title}
-                    </Link>
-                    <p className="text-xs text-zinc-500">
-                      {entry.startDate.toLocaleString("es-MX")} · {entry.location} ·{" "}
-                      {entry.organizer}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    <Badge variant="default">{entry.typeLabel}</Badge>
-                    <Badge variant="resolved">{entry.hours}h</Badge>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <DetailList
+        title="Detalle de actividades"
+        emptyText="No hay actividades registradas en este período."
+        items={report.details.map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          href: `/dashboard/activities/${entry.id}`,
+          subtitle: `${entry.startDate.toLocaleString("es-MX")} · ${entry.location} · ${entry.organizer}`,
+          badges: [entry.typeLabel, `${entry.hours}h`],
+          badgeTone: "resolved",
+        }))}
+      />
     </div>
   );
 }

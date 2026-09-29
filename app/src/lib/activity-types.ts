@@ -1,4 +1,4 @@
-import type { ActivityType } from "@prisma/client";
+import type { ActivityType, IssueStatus, Priority } from "@prisma/client";
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   FORO: "Foro",
@@ -7,6 +7,28 @@ export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   CONFERENCIA: "Conferencia",
   CAPACITACION: "Capacitación",
   OTRO: "Otro",
+};
+
+export const ISSUE_STATUS_LABELS: Record<IssueStatus, string> = {
+  OPEN: "Abierto",
+  IN_PROGRESS: "En Progreso",
+  RESOLVED: "Resuelto",
+  REJECTED: "Rechazado",
+};
+
+export const ISSUE_PRIORITY_LABELS: Record<Priority, string> = {
+  LOW: "Baja",
+  MEDIUM: "Media",
+  HIGH: "Alta",
+  CRITICAL: "Crítica",
+};
+
+export const ROLE_LABELS: Record<string, string> = {
+  PRACTICANTE: "Practicante",
+  STUDENT: "Estudiante",
+  TEACHER: "Docente",
+  SUPPORT: "Soporte",
+  ADMIN: "Admin",
 };
 
 export const MONTH_LABELS = [
