@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
 const ADMIN_NAV_ITEMS: NavItem[] = [
   { label: "Usuarios", href: "/dashboard/users", icon: "👥" },
   { label: "Historial Asistencia", href: "/dashboard/attendance/history", icon: "📊" },
+  { label: "Reportes", href: "/dashboard/reports", icon: "📈" },
 ];
 
 function isAdmin(role: string) {
@@ -34,11 +35,16 @@ function NavLinks({
 }) {
   const pathname = usePathname();
 
+  const activeHref = [...items]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find(
+      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )?.href;
+
   return (
     <>
       {items.map((item) => {
-        const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = item.href === activeHref;
         return (
           <Link
             key={item.href}

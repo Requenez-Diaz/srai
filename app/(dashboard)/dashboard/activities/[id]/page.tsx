@@ -5,6 +5,7 @@ import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getActivityById } from "@/app/src/lib/actions/activities";
+import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
 import { DeleteActivityButton } from "./delete-button";
 
 function canManageAll(role: string) {
@@ -46,7 +47,7 @@ export default async function ActivityDetailPage({
       <Card>
         <CardHeader>
           <div className="min-w-0">
-            <Badge>Actividad</Badge>
+            <Badge>{ACTIVITY_TYPE_LABELS[activity.type]}</Badge>
             <CardTitle className="mt-2 text-lg sm:text-xl">{activity.title}</CardTitle>
             <p className="mt-1 text-sm text-zinc-500">
               Creado el {activity.createdAt.toLocaleDateString()}

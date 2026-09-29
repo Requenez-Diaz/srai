@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { ActivityType } from "@prisma/client";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
 
@@ -10,6 +11,13 @@ function canManageAll(role: string) {
 
 function canCreateActivities(role: string) {
   return role === "PRACTICANTE" || role === "TEACHER" || role === "SUPPORT" || role === "ADMIN";
+}
+
+function parseActivityType(value: FormDataEntryValue | null): ActivityType {
+  const raw = String(value ?? "");
+  return (Object.values(ActivityType) as string[]).includes(raw)
+    ? (raw as ActivityType)
+    : ActivityType.OTRO;
 }
 
 export async function getActivities() {
@@ -58,6 +66,7 @@ export async function createActivity(_prev: unknown, formData: FormData) {
     data: {
       title,
       description: description || null,
+      type: parseActivityType(formData.get("type")),
       startDate: start,
       endDate: end,
       locationId,
@@ -108,6 +117,7 @@ export async function updateActivity(_prev: unknown, formData: FormData) {
     data: {
       title,
       description: description || null,
+      type: parseActivityType(formData.get("type")),
       startDate: start,
       endDate: end,
       locationId,

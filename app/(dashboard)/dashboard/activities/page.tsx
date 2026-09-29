@@ -4,6 +4,7 @@ import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getActivities } from "@/app/src/lib/actions/activities";
 import { getCurrentUser } from "@/app/src/lib/auth";
+import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
 
 function canCreate(role: string) {
   return role === "PRACTICANTE" || role === "TEACHER" || role === "SUPPORT" || role === "ADMIN";
@@ -39,9 +40,11 @@ export default async function ActivitiesPage() {
             <Link key={activity.id} href={`/dashboard/activities/${activity.id}`}>
               <Card className="h-full transition-colors hover:border-zinc-300 dark:hover:border-zinc-600">
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="default">Actividad</Badge>
-                    <span className="text-xs text-zinc-400">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="default">
+                      {ACTIVITY_TYPE_LABELS[activity.type]}
+                    </Badge>
+                    <span className="shrink-0 text-xs text-zinc-400">
                       {activity.startDate.toLocaleDateString()}
                     </span>
                   </div>

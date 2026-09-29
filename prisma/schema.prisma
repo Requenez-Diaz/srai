@@ -88,17 +88,27 @@ model IssueHistory {
   user           User        @relation(fields: [userId], references: [id])
 }
 
+enum ActivityType {
+  FORO
+  ACTO
+  TALLER
+  CONFERENCIA
+  CAPACITACION
+  OTRO
+}
+
 model Activity {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   title       String
   description String?
+  type        ActivityType @default(OTRO)
   startDate   DateTime
   endDate     DateTime
-  createdAt   DateTime @default(now())
+  createdAt   DateTime     @default(now())
   locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
+  location    Location     @relation(fields: [locationId], references: [id])
   organizerId String
-  organizer   User     @relation(fields: [organizerId], references: [id])
+  organizer   User         @relation(fields: [organizerId], references: [id])
 }
 
 model Session {

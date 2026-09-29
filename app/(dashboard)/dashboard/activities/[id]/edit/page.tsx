@@ -50,6 +50,7 @@ export default async function EditActivityPage({
           defaultEndDate={toDateInput(activity.endDate)}
           defaultEndTime={toTimeInput(activity.endDate)}
           defaultLocationId={activity.locationId}
+          defaultType={activity.type}
           locations={locations}
           buildings={buildings}
         />

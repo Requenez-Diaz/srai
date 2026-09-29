@@ -6,6 +6,7 @@ import { Textarea } from "@/app/src/components/ui/textarea";
 import { Select } from "@/app/src/components/ui/select";
 import { Button } from "@/app/src/components/ui/button";
 import { createActivity } from "@/app/src/lib/actions/activities";
+import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
 
 type Location = { id: string; building: string; room: string; floor: number };
 
@@ -34,6 +35,14 @@ export function CreateActivityForm({
         placeholder="Describe la actividad, objetivos y detalles relevantes..."
         rows={4}
       />
+
+      <Select label="Tipo de actividad" name="type" required defaultValue="OTRO">
+        {Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </Select>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Fecha de inicio" name="startDate" type="date" required />

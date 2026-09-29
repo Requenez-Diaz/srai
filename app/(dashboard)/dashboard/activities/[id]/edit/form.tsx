@@ -6,6 +6,7 @@ import { Textarea } from "@/app/src/components/ui/textarea";
 import { Select } from "@/app/src/components/ui/select";
 import { Button } from "@/app/src/components/ui/button";
 import { updateActivity } from "@/app/src/lib/actions/activities";
+import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
 
 type Location = { id: string; building: string; room: string; floor: number };
 
@@ -18,6 +19,7 @@ export function EditActivityForm({
   defaultEndDate,
   defaultEndTime,
   defaultLocationId,
+  defaultType,
   locations,
   buildings,
 }: {
@@ -29,6 +31,7 @@ export function EditActivityForm({
   defaultEndDate: string;
   defaultEndTime: string;
   defaultLocationId: string;
+  defaultType: string;
   locations: Location[];
   buildings: string[];
 }) {
@@ -52,6 +55,14 @@ export function EditActivityForm({
         defaultValue={defaultDescription}
         rows={4}
       />
+
+      <Select label="Tipo de actividad" name="type" required defaultValue={defaultType}>
+        {Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => (
+          <option key={value} value={value}>
+            {label}
+          </option>
+        ))}
+      </Select>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Fecha de inicio" name="startDate" type="date" defaultValue={defaultStartDate} required />
