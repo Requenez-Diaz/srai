@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
 
-function isToday(date: Date) {
+function _isToday(date: Date) {
   const now = new Date();
   return (
     date.getFullYear() === now.getFullYear() &&
@@ -105,14 +105,18 @@ export async function getAllAttendance() {
 
   if (user.role === "SUPPORT" || user.role === "ADMIN") {
     return db.attendance.findMany({
-      include: { user: { select: { id: true, name: true, email: true, role: true } } },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
       orderBy: { date: "desc" },
     });
   }
 
   return db.attendance.findMany({
     where: { userId: user.id },
-    include: { user: { select: { id: true, name: true, email: true, role: true } } },
+    include: {
+      user: { select: { id: true, name: true, email: true, role: true } },
+    },
     orderBy: { date: "desc" },
   });
 }
