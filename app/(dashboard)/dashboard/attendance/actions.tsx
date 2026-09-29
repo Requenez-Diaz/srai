@@ -16,9 +16,6 @@ type Attendance = {
 } | null;
 
 export function AttendanceActions({ attendance }: { attendance: Attendance }) {
-  const now = new Date();
-  const _hour = now.getHours();
-
   const canMorningIn = !attendance?.morningIn;
   const canMorningOut = !!attendance?.morningIn && !attendance?.morningOut;
   const canAfternoonIn = !attendance?.afternoonIn;
@@ -36,6 +33,7 @@ export function AttendanceActions({ attendance }: { attendance: Attendance }) {
           disabled={!canMorningIn}
           done={!!attendance?.morningIn}
         />
+
         <CardAction
           label='Salida Mañana'
           time='12:00 PM'
@@ -44,6 +42,7 @@ export function AttendanceActions({ attendance }: { attendance: Attendance }) {
           disabled={!canMorningOut}
           done={!!attendance?.morningOut}
         />
+
         <CardAction
           label='Entrada Tarde'
           time='1:00 PM'
@@ -52,6 +51,7 @@ export function AttendanceActions({ attendance }: { attendance: Attendance }) {
           disabled={!canAfternoonIn}
           done={!!attendance?.afternoonIn}
         />
+
         <CardAction
           label='Salida Tarde'
           time='5:00 PM'
@@ -92,13 +92,16 @@ function CardAction({
     >
       <div className='flex items-center gap-3'>
         <span className='text-lg'>{icon}</span>
+
         <div>
           <p className='text-sm font-medium text-zinc-900 dark:text-zinc-100'>
             {label}
           </p>
+
           <p className='text-xs text-zinc-400'>{time}</p>
         </div>
       </div>
+
       {done ? (
         <span className='text-xs font-medium text-green-600 dark:text-green-400'>
           Registrado
