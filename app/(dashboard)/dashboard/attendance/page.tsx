@@ -30,8 +30,8 @@ export default async function AttendancePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Registro de Horas</h2>
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">Registro de Horas</h2>
         <p className="text-sm text-zinc-500">{today}</p>
       </div>
 
@@ -42,10 +42,10 @@ export default async function AttendancePage() {
           <CardTitle>Resumen del Día</CardTitle>
         </CardHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
               <p className="text-sm font-medium text-zinc-500">🌅 Mañana</p>
-              <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              <p className="mt-1 text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-100">
                 {formatTime(attendance?.morningIn ?? null)} →{" "}
                 {formatTime(attendance?.morningOut ?? null)}
               </p>
@@ -55,7 +55,7 @@ export default async function AttendancePage() {
             </div>
             <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
               <p className="text-sm font-medium text-zinc-500">🌆 Tarde</p>
-              <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              <p className="mt-1 text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-100">
                 {formatTime(attendance?.afternoonIn ?? null)} →{" "}
                 {formatTime(attendance?.afternoonOut ?? null)}
               </p>

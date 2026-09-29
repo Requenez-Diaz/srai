@@ -9,8 +9,8 @@ export default async function NewUserPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Nuevo Usuario</h2>
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">Nuevo Usuario</h2>
         <p className="text-sm text-zinc-500">Crea una cuenta para un nuevo usuario</p>
       </div>
 

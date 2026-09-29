@@ -26,7 +26,12 @@ export function DeleteUserButton({ userId, currentUserId }: { userId: string; cu
   }
 
   return (
-    <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>
+    <Button
+      variant="danger"
+      size="sm"
+      onClick={() => setConfirming(true)}
+      className="w-full sm:w-auto"
+    >
       Eliminar
     </Button>
   );

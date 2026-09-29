@@ -45,8 +45,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Resumen General</h2>
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">Resumen General</h2>
         <p className="text-sm text-zinc-500">Estado actual del sistema</p>
       </div>
 
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
                       {issue.location.building} - {issue.location.room}
                     </p>
                   </div>
-                  <div className="ml-3 flex gap-2">
+                  <div className="ml-3 flex shrink-0 flex-wrap justify-end gap-2">
                     <Badge variant={statusBadge(issue.status)}>
                       {issue.status.replace("_", " ")}
                     </Badge>
@@ -105,8 +105,8 @@ export default async function DashboardPage() {
               href="/dashboard/issues/new"
               className="flex items-center gap-3 rounded-lg border border-zinc-200 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 text-lg dark:bg-yellow-900/30">⚠</span>
-              <div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-100 text-lg dark:bg-yellow-900/30">⚠</span>
+              <div className="min-w-0">
                 <p className="font-medium text-zinc-900 dark:text-zinc-50">Reportar Incidencia</p>
                 <p className="text-sm text-zinc-500">Notifica un problema en una ubicación</p>
               </div>
@@ -115,8 +115,8 @@ export default async function DashboardPage() {
               href="/dashboard/activities/new"
               className="flex items-center gap-3 rounded-lg border border-zinc-200 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-lg dark:bg-purple-900/30">📅</span>
-              <div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 text-lg dark:bg-purple-900/30">📅</span>
+              <div className="min-w-0">
                 <p className="font-medium text-zinc-900 dark:text-zinc-50">Registrar Actividad</p>
                 <p className="text-sm text-zinc-500">Crea una nueva actividad académica</p>
               </div>

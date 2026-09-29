@@ -92,7 +92,13 @@ export function ExportPdfButton({ userId }: { userId: string }) {
   };
 
   return (
-    <Button variant="secondary" size="sm" disabled={loading} onClick={handleExport}>
+    <Button
+      variant="secondary"
+      size="sm"
+      disabled={loading}
+      onClick={handleExport}
+      className="shrink-0"
+    >
       {loading ? "Exportando..." : "Exportar PDF"}
     </Button>
   );

@@ -9,14 +9,14 @@ export function DeleteUserButton({ userId }: { userId: string }) {
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <form action={deleteUser}>
           <input type="hidden" name="userId" value={userId} />
-          <Button type="submit" variant="danger" size="sm">
+          <Button type="submit" variant="danger" size="sm" className="w-full sm:w-auto">
             Confirmar
           </Button>
         </form>
-        <Button variant="secondary" size="sm" onClick={() => setConfirming(false)}>
+        <Button variant="secondary" size="sm" onClick={() => setConfirming(false)} className="w-full sm:w-auto">
           Cancelar
         </Button>
       </div>
@@ -24,7 +24,12 @@ export function DeleteUserButton({ userId }: { userId: string }) {
   }
 
   return (
-    <Button variant="danger" size="sm" onClick={() => setConfirming(true)}>
+    <Button
+      variant="danger"
+      size="sm"
+      onClick={() => setConfirming(true)}
+      className="w-full sm:w-auto"
+    >
       Eliminar
     </Button>
   );

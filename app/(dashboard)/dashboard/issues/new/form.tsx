@@ -60,7 +60,7 @@ export function CreateIssueForm({
       </Select>
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Enviando..." : "Enviar Reporte"}
         </Button>
       </div>

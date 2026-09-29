@@ -65,38 +65,39 @@ export function AttendanceModal({
     <>
       <button
         onClick={handleOpen}
-        className='cursor-pointer font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400'
+        className='cursor-pointer text-left font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400'
       >
         {userName}
       </button>
       <p className='text-xs text-zinc-400'>{userRole}</p>
 
       {open && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+        <div className='fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4'>
           <div
             className='fixed inset-0 bg-black/50'
             onClick={() => setOpen(false)}
           />
-          <div className='relative z-10 mx-4 max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-xl dark:bg-zinc-900'>
-            <div className='flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700'>
-              <div>
-                <h3 className='text-lg font-semibold text-zinc-900 dark:text-zinc-50'>
+          <div className='relative z-10 flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl bg-white shadow-xl sm:max-h-[80vh] sm:rounded-xl dark:bg-zinc-900'>
+            <div className='flex shrink-0 items-start justify-between gap-3 border-b border-zinc-200 px-4 py-4 sm:px-6 dark:border-zinc-700'>
+              <div className='min-w-0'>
+                <h3 className='truncate text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-50'>
                   Asistencia de {userName}
                 </h3>
                 <p className='text-sm text-zinc-500'>{userRole}</p>
               </div>
-              <div className='flex items-center gap-2'>
+              <div className='flex shrink-0 items-center gap-2'>
                 <ExportPdfButton userId={userId} />
                 <button
                   onClick={() => setOpen(false)}
-                  className='text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50'
+                  aria-label='Cerrar'
+                  className='flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50'
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className='overflow-y-auto max-h-[60vh] p-6'>
+            <div className='overflow-y-auto p-4 sm:p-6'>
               {loading && !data ? (
                 <p className='text-center text-sm text-zinc-500'>Cargando...</p>
               ) : !data || data.records.length === 0 ? (
@@ -105,84 +106,86 @@ export function AttendanceModal({
                 </p>
               ) : (
                 <>
-                  <table className='w-full text-sm'>
-                    <thead>
-                      <tr className='border-b border-zinc-200 dark:border-zinc-700'>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Fecha
-                        </th>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Entrada M.
-                        </th>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Salida M.
-                        </th>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Entrada T.
-                        </th>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Salida T.
-                        </th>
-                        <th className='px-3 py-2 text-left font-medium text-zinc-500'>
-                          Horas
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.records.map((record) => {
-                        const morningHours = calcHours(
-                          record.morningIn,
-                          record.morningOut,
-                        );
-                        const afternoonHours = calcHours(
-                          record.afternoonIn,
-                          record.afternoonOut,
-                        );
-                        const total =
-                          morningHours && afternoonHours
-                            ? (
-                                parseFloat(morningHours) +
-                                parseFloat(afternoonHours)
-                              ).toFixed(1)
-                            : (morningHours ?? afternoonHours ?? null);
+                  <div className='overflow-x-auto'>
+                    <table className='w-full min-w-[520px] text-sm'>
+                      <thead>
+                        <tr className='border-b border-zinc-200 dark:border-zinc-700'>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Fecha
+                          </th>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Entrada M.
+                          </th>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Salida M.
+                          </th>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Entrada T.
+                          </th>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Salida T.
+                          </th>
+                          <th className='px-3 py-2 text-left font-medium text-zinc-500'>
+                            Horas
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.records.map((record) => {
+                          const morningHours = calcHours(
+                            record.morningIn,
+                            record.morningOut,
+                          );
+                          const afternoonHours = calcHours(
+                            record.afternoonIn,
+                            record.afternoonOut,
+                          );
+                          const total =
+                            morningHours && afternoonHours
+                              ? (
+                                  parseFloat(morningHours) +
+                                  parseFloat(afternoonHours)
+                                ).toFixed(1)
+                              : (morningHours ?? afternoonHours ?? null);
 
-                        return (
-                          <tr
-                            key={record.id}
-                            className='border-b border-zinc-100 dark:border-zinc-800'
-                          >
-                            <td className='px-3 py-2 text-zinc-500'>
-                              {new Date(record.date).toLocaleDateString(
-                                "es-MX",
-                              )}
-                            </td>
-                            <td className='px-3 py-2 text-zinc-500'>
-                              {formatTime(record.morningIn)}
-                            </td>
-                            <td className='px-3 py-2 text-zinc-500'>
-                              {formatTime(record.morningOut)}
-                            </td>
-                            <td className='px-3 py-2 text-zinc-500'>
-                              {formatTime(record.afternoonIn)}
-                            </td>
-                            <td className='px-3 py-2 text-zinc-500'>
-                              {formatTime(record.afternoonOut)}
-                            </td>
-                            <td className='px-3 py-2'>
-                              {total ? (
-                                <Badge variant='resolved'>{total}h</Badge>
-                              ) : (
-                                <Badge variant='default'>--</Badge>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          return (
+                            <tr
+                              key={record.id}
+                              className='border-b border-zinc-100 dark:border-zinc-800'
+                            >
+                              <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
+                                {new Date(record.date).toLocaleDateString(
+                                  'es-MX',
+                                )}
+                              </td>
+                              <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
+                                {formatTime(record.morningIn)}
+                              </td>
+                              <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
+                                {formatTime(record.morningOut)}
+                              </td>
+                              <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
+                                {formatTime(record.afternoonIn)}
+                              </td>
+                              <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
+                                {formatTime(record.afternoonOut)}
+                              </td>
+                              <td className='px-3 py-2'>
+                                {total ? (
+                                  <Badge variant='resolved'>{total}h</Badge>
+                                ) : (
+                                  <Badge variant='default'>--</Badge>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
 
                   {data.totalPages > 1 && (
-                    <div className='mt-4 flex items-center justify-center gap-2'>
+                    <div className='mt-4 flex flex-wrap items-center justify-center gap-2'>
                       <Button
                         variant='secondary'
                         size='sm'

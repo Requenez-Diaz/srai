@@ -62,7 +62,7 @@ export function CreateActivityForm({
       </Select>
 
       <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Creando..." : "Crear Actividad"}
         </Button>
       </div>

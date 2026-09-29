@@ -24,7 +24,7 @@ export function AttendanceActions({ attendance }: { attendance: Attendance }) {
 
   return (
     <div className='space-y-4'>
-      <div className='grid grid-cols-2 gap-4'>
+      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         <CardAction
           label='Entrada Mañana'
           time='8:00 AM'
@@ -90,29 +90,33 @@ function CardAction({
             : "border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900"
       }`}
     >
-      <div className='flex items-center gap-3'>
-        <span className='text-lg'>{icon}</span>
+      <div className='min-w-0'>
+        <div className='flex items-center gap-3'>
+          <span className='shrink-0 text-lg'>{icon}</span>
 
-        <div>
-          <p className='text-sm font-medium text-zinc-900 dark:text-zinc-100'>
-            {label}
-          </p>
+          <div className='min-w-0'>
+            <p className='truncate text-sm font-medium text-zinc-900 dark:text-zinc-100'>
+              {label}
+            </p>
 
-          <p className='text-xs text-zinc-400'>{time}</p>
+            <p className='text-xs text-zinc-400'>{time}</p>
+          </div>
         </div>
       </div>
 
-      {done ? (
-        <span className='text-xs font-medium text-green-600 dark:text-green-400'>
-          Registrado
-        </span>
-      ) : (
-        <form action={action}>
-          <Button type='submit' size='sm' disabled={disabled}>
-            Registrar
-          </Button>
-        </form>
-      )}
+      <div className='shrink-0'>
+        {done ? (
+          <span className='text-xs font-medium text-green-600 dark:text-green-400'>
+            Registrado
+          </span>
+        ) : (
+          <form action={action}>
+            <Button type='submit' size='sm' disabled={disabled} className='w-full'>
+              Registrar
+            </Button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

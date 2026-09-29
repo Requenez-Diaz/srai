@@ -19,20 +19,20 @@ export default async function EditIssuePage({
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-2 text-sm text-zinc-500">
+      <nav className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
         <Link href="/dashboard/issues" className="hover:text-zinc-900 dark:hover:text-zinc-50">
           Incidencias
         </Link>
         <span>/</span>
         <Link
           href={`/dashboard/issues/${id}`}
-          className="hover:text-zinc-900 dark:hover:text-zinc-50"
+          className="min-w-0 truncate hover:text-zinc-900 dark:hover:text-zinc-50"
         >
           {issue.title}
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 dark:text-zinc-50">Editar</span>
-      </div>
+        <span className="shrink-0 text-zinc-900 dark:text-zinc-50">Editar</span>
+      </nav>
 
       <Card>
         <CardHeader>

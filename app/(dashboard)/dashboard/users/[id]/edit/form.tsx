@@ -45,11 +45,11 @@ export function EditUserForm({
 
       <Input label="Facultad" name="faculty" defaultValue={defaultFaculty} />
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" disabled={pending}>
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Guardando..." : "Guardar Cambios"}
         </Button>
-        <Button type="reset" variant="secondary" onClick={() => window.history.back()}>
+        <Button type="reset" variant="secondary" onClick={() => window.history.back()} className="w-full sm:w-auto">
           Cancelar
         </Button>
       </div>

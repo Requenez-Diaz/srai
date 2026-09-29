@@ -8,8 +8,8 @@ export default async function NewActivityPage() {
 
   return (
     <div className='max-w-2xl space-y-6'>
-      <div>
-        <h2 className='text-2xl font-bold text-zinc-900 dark:text-zinc-50'>
+      <div className='min-w-0'>
+        <h2 className='text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50'>
           Registrar Actividad
         </h2>
         <p className='text-sm text-zinc-500'>

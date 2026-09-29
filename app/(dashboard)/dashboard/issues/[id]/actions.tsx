@@ -39,8 +39,8 @@ export function IssueActions({
         <h4 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Cambiar Estado
         </h4>
-        <form action={statusAction} className="flex items-end gap-3">
-          <div className="flex-1">
+        <form action={statusAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
             <Select name="status" defaultValue={currentStatus}>
               <option value="OPEN">Abierto</option>
               <option value="IN_PROGRESS">En Progreso</option>
@@ -48,7 +48,7 @@ export function IssueActions({
               <option value="REJECTED">Rechazado</option>
             </Select>
           </div>
-          <Button type="submit" size="sm" disabled={statusPending}>
+          <Button type="submit" size="sm" disabled={statusPending} className="w-full sm:w-auto">
             {statusPending ? "..." : "Actualizar"}
           </Button>
         </form>
@@ -79,8 +79,8 @@ export function IssueActions({
           <h4 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Asignar a Soporte
           </h4>
-          <form action={assignAction} className="flex items-end gap-3">
-            <div className="flex-1">
+          <form action={assignAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
               <Select name="assignedToId">
                 <option value="">Seleccionar usuario</option>
                 {supportUsers.map((u) => (
@@ -90,7 +90,7 @@ export function IssueActions({
                 ))}
               </Select>
             </div>
-            <Button type="submit" size="sm" disabled={assignPending}>
+            <Button type="submit" size="sm" disabled={assignPending} className="w-full sm:w-auto">
               {assignPending ? "..." : "Asignar"}
             </Button>
           </form>
@@ -108,14 +108,14 @@ export function DeleteIssueButton({ issueId }: { issueId: string }) {
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <form action={deleteIssue}>
           <input type="hidden" name="issueId" value={issueId} />
-          <Button type="submit" variant="danger" size="sm">
+          <Button type="submit" variant="danger" size="sm" className="w-full sm:w-auto">
             Confirmar
           </Button>
         </form>
-        <Button variant="secondary" size="sm" onClick={() => setConfirming(false)}>
+        <Button variant="secondary" size="sm" onClick={() => setConfirming(false)} className="w-full sm:w-auto">
           Cancelar
         </Button>
       </div>

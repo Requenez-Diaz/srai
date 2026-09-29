@@ -22,20 +22,20 @@ export default async function EditActivityPage({
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-2 text-sm text-zinc-500">
+      <nav className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
         <Link href="/dashboard/activities" className="hover:text-zinc-900 dark:hover:text-zinc-50">
           Actividades
         </Link>
         <span>/</span>
         <Link
           href={`/dashboard/activities/${id}`}
-          className="hover:text-zinc-900 dark:hover:text-zinc-50"
+          className="min-w-0 truncate hover:text-zinc-900 dark:hover:text-zinc-50"
         >
           {activity.title}
         </Link>
         <span>/</span>
-        <span className="text-zinc-900 dark:text-zinc-50">Editar</span>
-      </div>
+        <span className="shrink-0 text-zinc-900 dark:text-zinc-50">Editar</span>
+      </nav>
 
       <Card>
         <CardHeader>
