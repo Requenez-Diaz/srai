@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/app/src/components/ui/button";
 import { getAllAttendanceByUser } from "@/app/src/lib/actions/attendance";
 import { computeDayHours, formatHours } from "@/app/src/lib/attendance-hours";
-import { formatDate, formatDateLong, formatTime } from "@/app/src/lib/date-format";
+import { formatDbDate, formatDateLong, formatTime } from "@/app/src/lib/date-format";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -55,7 +55,7 @@ export function ExportPdfButton({ userId }: { userId: string }) {
       doc.text(`Generado el ${now}`, pageWidth - 14, 15, { align: "right" });
 
       const rows = days.map(({ record: r, day }) => [
-        formatDate(r.date),
+        formatDbDate(r.date),
         formatTime(r.morningIn),
         formatTime(r.morningOut),
         formatTime(r.afternoonIn),

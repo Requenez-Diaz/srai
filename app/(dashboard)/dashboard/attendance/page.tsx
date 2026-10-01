@@ -1,16 +1,27 @@
 import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
-import { getTodayAttendance } from "@/app/src/lib/actions/attendance";
+import { getCurrentUser } from "@/app/src/lib/auth";
+import {
+  getAttendanceUsers,
+  getTodayAttendance,
+} from "@/app/src/lib/actions/attendance";
 import {
   computeDayHours,
   formatHours,
   formatShiftRange,
   incompleteWarning,
 } from "@/app/src/lib/attendance-hours";
-import { formatDateLong } from "@/app/src/lib/date-format";
+import { canPickOtherUsers } from "@/app/src/lib/attendance-manual";
+import { formatDateLong, getDateKey } from "@/app/src/lib/date-format";
 import { AttendanceActions } from "./actions";
+import { ManualAttendanceDialog } from "./manual-attendance-dialog";
 
 export default async function AttendancePage() {
-  const attendance = await getTodayAttendance();
+  const [user, attendance, users] = await Promise.all([
+    getCurrentUser(),
+    getTodayAttendance(),
+    getAttendanceUsers(),
+  ]);
+
   const today = formatDateLong(new Date());
 
   const day = computeDayHours({
@@ -30,6 +41,12 @@ export default async function AttendancePage() {
         </h2>
         <p className="text-sm text-zinc-500">{today}</p>
       </div>
+
+      <ManualAttendanceDialog
+        users={users}
+        canPickUser={Boolean(user && canPickOtherUsers(user.role))}
+        todayKey={getDateKey()}
+      />
 
       <AttendanceActions attendance={attendance} />
 

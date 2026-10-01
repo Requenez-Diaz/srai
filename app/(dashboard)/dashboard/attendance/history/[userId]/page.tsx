@@ -4,8 +4,11 @@ import { getAttendanceByUser } from "@/app/src/lib/actions/attendance";
 import { Card } from "@/app/src/components/ui/card";
 import Link from "next/link";
 import { computeDayHours, formatShiftRange, formatTime } from "@/app/src/lib/attendance-hours";
-import { formatDate } from "@/app/src/lib/date-format";
+import { canManageAttendance, canPickOtherUsers } from "@/app/src/lib/attendance-manual";
+import { formatDbDate, getDateKey } from "@/app/src/lib/date-format";
+import { getAttendanceUsers } from "@/app/src/lib/actions/attendance";
 import { HoursBadge } from "../../hours-badge";
+import { AttendanceRowActions } from "../attendance-row-actions";
 
 export default async function UserAttendancePage({
   params,
@@ -25,8 +28,13 @@ export default async function UserAttendancePage({
   if (!targetUser) notFound();
 
   const days = records.map((record) => ({ record, day: computeDayHours(record) }));
-  const incompleteDays = days.filter(({ day }) => day.hasOpenShift).length;
+  const incompleteDays = days.filter(({ day }) => day.missingCount > 0).length;
   const periodTotalMinutes = days.reduce((acc, { day }) => acc + day.totalMinutes, 0);
+
+  const users = await getAttendanceUsers();
+  const canPickUser = canPickOtherUsers(user.role);
+  const canManage = canManageAttendance(user, userId);
+  const todayKey = getDateKey();
 
   return (
     <div className="space-y-6">
@@ -66,7 +74,7 @@ export default async function UserAttendancePage({
               {incompleteDays}
             </p>
             {incompleteDays > 0 && (
-              <p className="text-xs text-zinc-400">Falta registrar alguna salida</p>
+              <p className="text-xs text-zinc-400">Faltan datos o hay un turno invertido</p>
             )}
           </Card>
         </div>
@@ -89,6 +97,9 @@ export default async function UserAttendancePage({
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Entrada T.</th>
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Salida T.</th>
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Horas</th>
+                    {canManage && (
+                      <th className="px-4 py-3 text-right font-medium text-zinc-500">Acciones</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -99,7 +110,14 @@ export default async function UserAttendancePage({
                         className="border-b border-zinc-100 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
                       >
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                          {formatDate(record.date)}
+                          <span className="flex items-center gap-2">
+                            {formatDbDate(record.date)}
+                            {record.isManual && (
+                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                Manual
+                              </span>
+                            )}
+                          </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningOut)}</td>
@@ -108,6 +126,16 @@ export default async function UserAttendancePage({
                         <td className="px-4 py-3 text-right">
                           <HoursBadge day={day} />
                         </td>
+                        {canManage && (
+                          <td className="px-4 py-3">
+                            <AttendanceRowActions
+                              record={record}
+                              users={users}
+                              canPickUser={canPickUser}
+                              todayKey={todayKey}
+                            />
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -122,8 +150,13 @@ export default async function UserAttendancePage({
                 <Card key={record.id} className="p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {formatDate(record.date)}
+                      <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {formatDbDate(record.date)}
+                        {record.isManual && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            Manual
+                          </span>
+                        )}
                       </p>
                       <HoursBadge day={day} />
                     </div>
@@ -147,6 +180,16 @@ export default async function UserAttendancePage({
                         </p>
                       </div>
                     </div>
+                    {canManage && (
+                      <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <AttendanceRowActions
+                          record={record}
+                          users={users}
+                          canPickUser={canPickUser}
+                          todayKey={todayKey}
+                        />
+                      </div>
+                    )}
                   </div>
                 </Card>
               );

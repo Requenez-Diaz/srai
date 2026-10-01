@@ -1,20 +1,34 @@
 import { Card } from "@/app/src/components/ui/card";
-import { getAllAttendance } from "@/app/src/lib/actions/attendance";
+import {
+  getAllAttendance,
+  getAttendanceUsers,
+} from "@/app/src/lib/actions/attendance";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import {
   computeDayHours,
   formatShiftRange,
   formatTime,
 } from "@/app/src/lib/attendance-hours";
-import { formatDate } from "@/app/src/lib/date-format";
+import { canManageAttendance, canPickOtherUsers } from "@/app/src/lib/attendance-manual";
+import { formatDbDate, getDateKey } from "@/app/src/lib/date-format";
 import { AttendanceModal } from "./attendance-modal";
+import { AttendanceRowActions } from "./attendance-row-actions";
 import { HoursBadge } from "../hours-badge";
 
 export default async function AttendanceHistoryPage() {
-  const user = await getCurrentUser();
-  const records = await getAllAttendance();
+  const [user, records, users] = await Promise.all([
+    getCurrentUser(),
+    getAllAttendance(),
+    getAttendanceUsers(),
+  ]);
 
   const days = records.map((record) => ({ record, day: computeDayHours(record) }));
+  const isElevated = Boolean(user && canPickOtherUsers(user.role));
+  const canPickUser = isElevated;
+  const todayKey = getDateKey();
+
+  const canManage = (userId: string) =>
+    Boolean(user && canManageAttendance(user, userId));
 
   const roleLabel = (role: string) => {
     const map: Record<string, string> = {
@@ -60,6 +74,7 @@ export default async function AttendanceHistoryPage() {
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Entrada T.</th>
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Salida T.</th>
                     <th className="px-4 py-3 text-left font-medium text-zinc-500">Horas</th>
+                    <th className="px-4 py-3 text-right font-medium text-zinc-500">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -75,11 +90,21 @@ export default async function AttendanceHistoryPage() {
                               userId={record.user.id}
                               userName={record.user.name}
                               userRole={roleLabel(record.user.role)}
+                              users={users}
+                              canPickUser={canPickUser}
+                              canManage={canManage(record.user.id)}
                             />
                           </td>
                         )}
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                          {formatDate(record.date)}
+                          <div className="flex items-center gap-2">
+                            <span>{formatDbDate(record.date)}</span>
+                            {record.isManual && (
+                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                Manual
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningOut)}</td>
@@ -87,6 +112,16 @@ export default async function AttendanceHistoryPage() {
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.afternoonOut)}</td>
                         <td className="px-4 py-3 text-right">
                           <HoursBadge day={day} />
+                        </td>
+                        <td className="px-4 py-3">
+                          {canManage(record.userId) && (
+                            <AttendanceRowActions
+                              record={record}
+                              users={users}
+                              canPickUser={canPickUser}
+                              todayKey={todayKey}
+                            />
+                          )}
                         </td>
                       </tr>
                     );
@@ -110,10 +145,20 @@ export default async function AttendanceHistoryPage() {
                             userId={record.user.id}
                             userName={record.user.name}
                             userRole={roleLabel(record.user.role)}
+                            users={users}
+                            canPickUser={canPickUser}
+                            canManage={canManage(record.user.id)}
                           />
                         )}
                         <p className="text-xs text-zinc-500">
-                          {formatDate(record.date)}
+                          <span className="flex flex-wrap items-center gap-2">
+                            {formatDbDate(record.date)}
+                            {record.isManual && (
+                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                Manual
+                              </span>
+                            )}
+                          </span>
                         </p>
                       </div>
                       <HoursBadge day={day} />
@@ -138,6 +183,16 @@ export default async function AttendanceHistoryPage() {
                         </p>
                       </div>
                     </div>
+                    {canManage(record.userId) && (
+                      <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                        <AttendanceRowActions
+                          record={record}
+                          users={users}
+                          canPickUser={canPickUser}
+                          todayKey={todayKey}
+                        />
+                      </div>
+                    )}
                   </div>
                 </Card>
               );

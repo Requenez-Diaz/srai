@@ -81,6 +81,38 @@ export function dateKeyToDbDate(key: string) {
   return new Date(`${key}T00:00:00.000Z`);
 }
 
+/**
+ * Formatea una columna `@db.Date` (solo fecha, sin hora).
+ *
+ * Prisma devuelve estas columnas como `Date` en medianoche UTC. Aplicarle la
+ * zona de Managua (UTC-6) las correria un dia hacia atras, asi que aqui se
+ * lee en UTC, que es como Postgres las guarda.
+ */
+export function formatDbDate(value: Date | string | null | undefined) {
+  const date = toDate(value);
+  if (!date) return "--";
+  return date.toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** "YYYY-MM-DD" de una columna `@db.Date`, leida en UTC. */
+export function dbDateToDateKey(value: Date | string | null | undefined) {
+  const date = toDate(value);
+  if (!date) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
 export function getTodayDbDate() {
   return dateKeyToDbDate(getDateKey());
 }
