@@ -32,8 +32,11 @@ export default function RegisterPage() {
           <option value="PRACTICANTE">Practicante</option>
           <option value="STUDENT">Estudiante</option>
           <option value="TEACHER">Docente</option>
-          <option value="SUPPORT">Soporte</option>
         </Select>
+        <p className="-mt-2 text-xs text-zinc-500">
+          El rol Soporte solo lo asigna un administrador desde Usuarios → Nuevo
+          Usuario.
+        </p>
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? "Creando cuenta..." : "Crear Cuenta"}
         </Button>
