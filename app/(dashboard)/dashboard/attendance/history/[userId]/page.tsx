@@ -4,6 +4,7 @@ import { getAttendanceByUser } from "@/app/src/lib/actions/attendance";
 import { Card } from "@/app/src/components/ui/card";
 import Link from "next/link";
 import { computeDayHours, formatShiftRange, formatTime } from "@/app/src/lib/attendance-hours";
+import { formatDate } from "@/app/src/lib/date-format";
 import { HoursBadge } from "../../hours-badge";
 
 export default async function UserAttendancePage({
@@ -98,7 +99,7 @@ export default async function UserAttendancePage({
                         className="border-b border-zinc-100 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
                       >
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                          {record.date.toLocaleDateString("es-MX")}
+                          {formatDate(record.date)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningOut)}</td>
@@ -122,7 +123,7 @@ export default async function UserAttendancePage({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {record.date.toLocaleDateString("es-MX")}
+                        {formatDate(record.date)}
                       </p>
                       <HoursBadge day={day} />
                     </div>

@@ -6,16 +6,12 @@ import {
   formatShiftRange,
   incompleteWarning,
 } from "@/app/src/lib/attendance-hours";
+import { formatDateLong } from "@/app/src/lib/date-format";
 import { AttendanceActions } from "./actions";
 
 export default async function AttendancePage() {
   const attendance = await getTodayAttendance();
-  const today = new Date().toLocaleDateString("es-MX", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const today = formatDateLong(new Date());
 
   const day = computeDayHours({
     morningIn: attendance?.morningIn ?? null,

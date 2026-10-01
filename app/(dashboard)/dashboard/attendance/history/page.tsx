@@ -6,6 +6,7 @@ import {
   formatShiftRange,
   formatTime,
 } from "@/app/src/lib/attendance-hours";
+import { formatDate } from "@/app/src/lib/date-format";
 import { AttendanceModal } from "./attendance-modal";
 import { HoursBadge } from "../hours-badge";
 
@@ -78,7 +79,7 @@ export default async function AttendanceHistoryPage() {
                           </td>
                         )}
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                          {record.date.toLocaleDateString("es-MX")}
+                          {formatDate(record.date)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningOut)}</td>
@@ -112,7 +113,7 @@ export default async function AttendanceHistoryPage() {
                           />
                         )}
                         <p className="text-xs text-zinc-500">
-                          {record.date.toLocaleDateString("es-MX")}
+                          {formatDate(record.date)}
                         </p>
                       </div>
                       <HoursBadge day={day} />

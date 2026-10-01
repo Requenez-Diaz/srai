@@ -3,6 +3,7 @@ import { Badge, statusBadge, priorityBadge } from "@/app/src/components/ui/badge
 import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getIssues } from "@/app/src/lib/actions/issues";
+import { formatDate } from "@/app/src/lib/date-format";
 
 export default async function IssuesPage() {
   const issues = await getIssues();
@@ -67,7 +68,7 @@ export default async function IssuesPage() {
                         <Badge variant={priorityBadge(issue.priority)}>{issue.priority}</Badge>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                        {issue.createdAt.toLocaleDateString()}
+                        {formatDate(issue.createdAt)}
                       </td>
                     </tr>
                   ))}
@@ -108,7 +109,7 @@ export default async function IssuesPage() {
                     <div className="flex justify-between gap-3">
                       <dt>Fecha</dt>
                       <dd className="shrink-0 text-right">
-                        {issue.createdAt.toLocaleDateString()}
+                        {formatDate(issue.createdAt)}
                       </dd>
                     </div>
                   </dl>

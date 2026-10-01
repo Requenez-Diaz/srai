@@ -5,6 +5,7 @@ import { Button } from "@/app/src/components/ui/button";
 import Link from "next/link";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getIssueById, getSupportUsers } from "@/app/src/lib/actions/issues";
+import { formatDateTime } from "@/app/src/lib/date-format";
 import { IssueActions, DeleteIssueButton } from "./actions";
 
 function canManageAll(role: string) {
@@ -50,7 +51,7 @@ export default async function IssueDetailPage({
             <div className="min-w-0">
               <CardTitle className="text-lg sm:text-xl">{issue.title}</CardTitle>
               <p className="mt-1 text-sm text-zinc-500">
-                Creado el {issue.createdAt.toLocaleString()}
+                Creado el {formatDateTime(issue.createdAt)}
               </p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
@@ -132,7 +133,7 @@ export default async function IssueDetailPage({
                     </Badge>
                     <span className="text-xs text-zinc-500">por {entry.user.name}</span>
                     <span className="text-xs text-zinc-400">
-                      {entry.createdAt.toLocaleString()}
+                      {formatDateTime(entry.createdAt)}
                     </span>
                   </div>
                   {entry.comment && (

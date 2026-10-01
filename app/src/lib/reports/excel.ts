@@ -1,4 +1,5 @@
 import type ExcelJS from "exceljs";
+import { formatDateTime } from "@/app/src/lib/date-format";
 
 export const HEADER_FILL: ExcelJS.Fill = {
   type: "pattern",
@@ -46,7 +47,7 @@ export function writeTitleBlock(
   sheet.getCell(3, 1).value = `Rango: ${options.rangeLabel}`;
 
   sheet.mergeCells(4, 1, 4, options.columns);
-  sheet.getCell(4, 1).value = `Generado: ${options.generatedAt.toLocaleString("es-MX")}`;
+  sheet.getCell(4, 1).value = `Generado: ${formatDateTime(options.generatedAt)}`;
 }
 
 export type GroupedRow = {

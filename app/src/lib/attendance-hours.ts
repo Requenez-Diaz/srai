@@ -1,3 +1,5 @@
+import { formatTime as formatTimeInZone } from "@/app/src/lib/date-format";
+
 const MS_PER_MINUTE = 60_000;
 
 export type ShiftInput = {
@@ -90,9 +92,7 @@ export function formatHours(hours: number | null, decimals = 2) {
 }
 
 export function formatTime(date: Date | string | null) {
-  const parsed = toDate(date);
-  if (!parsed) return "--:--";
-  return parsed.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+  return formatTimeInZone(date);
 }
 
 export function formatShiftRange(input: ShiftInput) {

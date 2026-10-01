@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getActivities } from "@/app/src/lib/actions/activities";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
+import { formatDate } from "@/app/src/lib/date-format";
 
 function canCreate(role: string) {
   return role === "PRACTICANTE" || role === "TEACHER" || role === "SUPPORT" || role === "ADMIN";
@@ -45,7 +46,7 @@ export default async function ActivitiesPage() {
                       {ACTIVITY_TYPE_LABELS[activity.type]}
                     </Badge>
                     <span className="shrink-0 text-xs text-zinc-400">
-                      {activity.startDate.toLocaleDateString()}
+                      {formatDate(activity.startDate)}
                     </span>
                   </div>
                   <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">

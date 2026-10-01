@@ -1,4 +1,9 @@
 import type { ActivityType, IssueStatus, Priority } from "@prisma/client";
+import {
+  formatDate,
+  getZonedYearMonth,
+  startOfZonedMonth,
+} from "@/app/src/lib/date-format";
 
 export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
   FORO: "Foro",
@@ -84,13 +89,14 @@ export function resolvePeriod(input: {
   const now = new Date();
   const kind: PeriodKind = input.kind === "quarterly" ? "quarterly" : "monthly";
 
-  const year = clampInt(input.year, 2000, 2100, now.getFullYear());
+  const zonedNow = getZonedYearMonth(now);
+  const year = clampInt(input.year, 2000, 2100, zonedNow.year);
 
   if (kind === "quarterly") {
-    const period = clampInt(input.period, 1, 4, Math.floor(now.getMonth() / 3) + 1);
+    const period = clampInt(input.period, 1, 4, Math.floor(zonedNow.month / 3) + 1);
     const startMonthIndex = (period - 1) * 3;
-    const start = new Date(year, startMonthIndex, 1);
-    const end = new Date(year, startMonthIndex + 3, 1);
+    const start = startOfZonedMonth(year, startMonthIndex);
+    const end = startOfZonedMonth(year, startMonthIndex + 3);
 
     return {
       kind,
@@ -100,15 +106,13 @@ export function resolvePeriod(input: {
       end,
       label: `${QUARTER_LABELS[period - 1]} ${year}`,
       shortLabel: `T${period} ${year}`,
-      rangeLabel: `${start.toLocaleDateString("es-MX")} - ${new Date(
-        end.getTime() - 1,
-      ).toLocaleDateString("es-MX")}`,
+      rangeLabel: `${formatDate(start)} - ${formatDate(end)}`,
     };
   }
 
-  const period = clampInt(input.period, 1, 12, now.getMonth() + 1);
-  const start = new Date(year, period - 1, 1);
-  const end = new Date(year, period, 1);
+  const period = clampInt(input.period, 1, 12, zonedNow.month + 1);
+  const start = startOfZonedMonth(year, period - 1);
+  const end = startOfZonedMonth(year, period);
 
   return {
     kind,
@@ -118,9 +122,7 @@ export function resolvePeriod(input: {
     end,
     label: `${MONTH_LABELS[period - 1]} ${year}`,
     shortLabel: `${MONTH_LABELS[period - 1]} ${year}`,
-    rangeLabel: `${start.toLocaleDateString("es-MX")} - ${new Date(
-      end.getTime() - 1,
-    ).toLocaleDateString("es-MX")}`,
+    rangeLabel: `${formatDate(start)} - ${formatDate(end)}`,
   };
 }
 

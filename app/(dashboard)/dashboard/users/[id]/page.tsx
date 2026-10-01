@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getUserById } from "@/app/src/lib/actions/auth";
+import { formatDate } from "@/app/src/lib/date-format";
 import { Card, CardHeader, CardTitle } from "@/app/src/components/ui/card";
 import { Badge, roleBadge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
@@ -42,7 +43,7 @@ export default async function UserDetailPage({
             <div className="min-w-0">
               <CardTitle className="text-lg sm:text-xl">{targetUser.name}</CardTitle>
               <p className="mt-1 text-sm text-zinc-500">
-                Creado el {targetUser.createdAt.toLocaleDateString("es-ES")}
+                Creado el {formatDate(targetUser.createdAt)}
               </p>
             </div>
             <Badge variant={roleBadge(targetUser.role)}>{targetUser.role}</Badge>
