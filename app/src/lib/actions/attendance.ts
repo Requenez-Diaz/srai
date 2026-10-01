@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
-import { getTodayDbDate } from "@/app/src/lib/date-format";
+import { getTodayDbDate, formatDbDate } from "@/app/src/lib/date-format";
+import {
+  canManageAttendance,
+  canPickOtherUsers,
+  parseManualAttendance,
+  toDbDate,
+} from "@/app/src/lib/attendance-manual";
 
 export async function getTodayAttendance() {
   const user = await getCurrentUser();
@@ -291,4 +297,131 @@ export async function getAllAttendanceByUser(userId: string) {
     records,
     user: targetUser,
   };
+}
+
+export type AttendanceFormState = { ok?: true; error?: string } | undefined;
+
+function revalidateAttendanceViews() {
+  revalidatePath("/dashboard/attendance");
+  revalidatePath("/dashboard/attendance/history");
+}
+
+export async function addManualAttendance(
+  _prev: AttendanceFormState,
+  formData: FormData,
+): Promise<AttendanceFormState> {
+  const user = await getCurrentUser();
+
+  if (!user) return { error: "Sesión expirada. Vuelve a iniciar sesión." };
+
+  const parsed = parseManualAttendance(formData, user.id);
+
+  if (!parsed.ok) return { error: parsed.error };
+
+  const { userId, dateKey, ...times } = parsed.value;
+
+  if (!canManageAttendance(user, userId)) {
+    return { error: "No puedes registrar horas a nombre de otra persona." };
+  }
+
+  const target = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!target) return { error: "El practicante indicado no existe." };
+
+  const date = toDbDate(dateKey);
+  const existing = await db.attendance.findUnique({
+    where: { userId_date: { userId, date } },
+  });
+
+  if (existing) {
+    const label = formatDbDate(date);
+    return {
+      error: `Ya existe un registro para el ${label}. Edítalo desde el historial en lugar de agregar otro.`,
+    };
+  }
+
+  await db.attendance.create({
+    data: { userId, date, ...times, isManual: true },
+  });
+
+  revalidateAttendanceViews();
+  return { ok: true };
+}
+
+export async function updateManualAttendance(
+  _prev: AttendanceFormState,
+  formData: FormData,
+): Promise<AttendanceFormState> {
+  const user = await getCurrentUser();
+
+  if (!user) return { error: "Sesión expirada. Vuelve a iniciar sesión." };
+
+  const recordId = String(formData.get("recordId") ?? "").trim();
+  if (!recordId) return { error: "Falta el identificador del registro." };
+
+  const record = await db.attendance.findUnique({ where: { id: recordId } });
+
+  if (!record) return { error: "El registro ya no existe." };
+
+  if (!canManageAttendance(user, record.userId)) {
+    return { error: "No tienes permiso para modificar este registro." };
+  }
+
+  const parsed = parseManualAttendance(formData, record.userId);
+
+  if (!parsed.ok) return { error: parsed.error };
+
+  const { userId, dateKey, ...times } = parsed.value;
+
+  if (userId !== record.userId) {
+    return { error: "No se puede mover un registro a otro practicante." };
+  }
+
+  const date = toDbDate(dateKey);
+  const clash = await db.attendance.findUnique({
+    where: { userId_date: { userId, date } },
+  });
+
+  if (clash && clash.id !== record.id) {
+    return {
+      error: `Ya existe otro registro para el ${formatDbDate(date)}. Elige una fecha libre.`,
+    };
+  }
+
+  await db.attendance.update({
+    where: { id: record.id },
+    data: { date, ...times, isManual: true },
+  });
+
+  revalidateAttendanceViews();
+  return { ok: true };
+}
+
+export async function deleteAttendanceRecord(formData: FormData) {
+  const user = await getCurrentUser();
+
+  if (!user) return;
+
+  const recordId = String(formData.get("recordId") ?? "").trim();
+  if (!recordId) return;
+
+  const record = await db.attendance.findUnique({ where: { id: recordId } });
+
+  if (!record) return;
+
+  if (!canManageAttendance(user, record.userId)) return;
+
+  await db.attendance.delete({ where: { id: record.id } });
+
+  revalidateAttendanceViews();
+}
+
+export async function getAttendanceUsers() {
+  const user = await getCurrentUser();
+
+  if (!user || !canPickOtherUsers(user.role)) return [];
+
+  return db.user.findMany({
+    select: { id: true, name: true, role: true },
+    orderBy: { name: "asc" },
+  });
 }

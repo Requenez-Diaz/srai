@@ -1,30 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import { getAttendanceByUser } from "@/app/src/lib/actions/attendance";
-import { computeDayHours, formatHours } from "@/app/src/lib/attendance-hours";
-import { formatDate, formatTime } from "@/app/src/lib/date-format";
+import { computeDayHours } from "@/app/src/lib/attendance-hours";
+import { HoursBadge } from "../hours-badge";
+import { formatDbDate, formatTime, getDateKey } from "@/app/src/lib/date-format";
 import { ExportPdfButton } from "./export-pdf-button";
+import { AttendanceRowActions } from "./attendance-row-actions";
 
 type AttendanceRecord = {
   id: string;
+  userId: string;
   date: Date;
   morningIn: Date | null;
   morningOut: Date | null;
   afternoonIn: Date | null;
   afternoonOut: Date | null;
+  isManual: boolean;
 };
 
 export function AttendanceModal({
   userId,
   userName,
   userRole,
+  users,
+  canPickUser,
+  canManage,
 }: {
   userId: string;
   userName: string;
   userRole: string;
+  users: { id: string; name: string; role: string }[];
+  canPickUser: boolean;
+  canManage: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
@@ -46,6 +55,8 @@ export function AttendanceModal({
     setOpen(true);
     if (!data) await fetchPage(1);
   };
+
+  const todayKey = getDateKey();
 
   return (
     <>
@@ -114,6 +125,11 @@ export function AttendanceModal({
                           <th className='px-3 py-2 text-left font-medium text-zinc-500'>
                             Horas
                           </th>
+                          {canManage && (
+                            <th className='px-3 py-2 text-right font-medium text-zinc-500'>
+                              Acciones
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody>
@@ -126,7 +142,14 @@ export function AttendanceModal({
                               className='border-b border-zinc-100 dark:border-zinc-800'
                             >
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {formatDate(record.date)}
+                                <span className='flex flex-wrap items-center gap-2'>
+                                  {formatDbDate(record.date)}
+                                  {record.isManual && (
+                                    <span className='rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'>
+                                      Manual
+                                    </span>
+                                  )}
+                                </span>
                               </td>
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
                                 {day.morning.start
@@ -149,14 +172,18 @@ export function AttendanceModal({
                                   : "--:--"}
                               </td>
                               <td className='px-3 py-2'>
-                                {day.totalHours !== null ? (
-                                  <Badge variant='resolved'>
-                                    {formatHours(day.totalHours)}h
-                                  </Badge>
-                                ) : (
-                                  <Badge variant='default'>--</Badge>
-                                )}
+                                <HoursBadge day={day} />
                               </td>
+                              {canManage && (
+                                <td className='px-3 py-2'>
+                                  <AttendanceRowActions
+                                    record={record}
+                                    users={users}
+                                    canPickUser={canPickUser}
+                                    todayKey={todayKey}
+                                  />
+                                </td>
+                              )}
                             </tr>
                           );
                         })}
