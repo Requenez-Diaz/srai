@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getUsers } from "@/app/src/lib/actions/auth";
+import { formatDate } from "@/app/src/lib/date-format";
 import { Card } from "@/app/src/components/ui/card";
 import { Badge, roleBadge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
@@ -64,7 +65,7 @@ export default async function UsersPage() {
                         <Badge variant={roleBadge(u.role)}>{u.role}</Badge>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                        {u.createdAt.toLocaleDateString("es-ES")}
+                        {formatDate(u.createdAt)}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <DeleteUserButton userId={u.id} currentUserId={user.id} />
@@ -94,7 +95,7 @@ export default async function UsersPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
                     <span className="text-xs text-zinc-500">
-                      Creado {u.createdAt.toLocaleDateString("es-ES")}
+                      Creado {formatDate(u.createdAt)}
                     </span>
                     <DeleteUserButton userId={u.id} currentUserId={user.id} />
                   </div>

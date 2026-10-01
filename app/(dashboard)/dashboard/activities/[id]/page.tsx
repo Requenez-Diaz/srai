@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getActivityById } from "@/app/src/lib/actions/activities";
 import { ACTIVITY_TYPE_LABELS } from "@/app/src/lib/activity-types";
+import { formatDate, formatDateTime } from "@/app/src/lib/date-format";
 import { DeleteActivityButton } from "./delete-button";
 
 function canManageAll(role: string) {
@@ -50,7 +51,7 @@ export default async function ActivityDetailPage({
             <Badge>{ACTIVITY_TYPE_LABELS[activity.type]}</Badge>
             <CardTitle className="mt-2 text-lg sm:text-xl">{activity.title}</CardTitle>
             <p className="mt-1 text-sm text-zinc-500">
-              Creado el {activity.createdAt.toLocaleDateString()}
+              Creado el {formatDate(activity.createdAt)}
             </p>
           </div>
         </CardHeader>
@@ -66,13 +67,13 @@ export default async function ActivityDetailPage({
             <div>
               <h4 className="mb-1 text-sm font-medium text-zinc-500">Inicio</h4>
               <p className="text-sm text-zinc-900 dark:text-zinc-100">
-                {activity.startDate.toLocaleString()}
+                {formatDateTime(activity.startDate)}
               </p>
             </div>
             <div>
               <h4 className="mb-1 text-sm font-medium text-zinc-500">Fin</h4>
               <p className="text-sm text-zinc-900 dark:text-zinc-100">
-                {activity.endDate.toLocaleString()}
+                {formatDateTime(activity.endDate)}
               </p>
             </div>
             <div>

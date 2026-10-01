@@ -1,35 +1,20 @@
 import { Card } from "@/app/src/components/ui/card";
-import { Badge } from "@/app/src/components/ui/badge";
 import { getAllAttendance } from "@/app/src/lib/actions/attendance";
 import { getCurrentUser } from "@/app/src/lib/auth";
+import {
+  computeDayHours,
+  formatShiftRange,
+  formatTime,
+} from "@/app/src/lib/attendance-hours";
+import { formatDate } from "@/app/src/lib/date-format";
 import { AttendanceModal } from "./attendance-modal";
-
-function formatTime(date: Date | null) {
-  if (!date) return "--:--";
-  return date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-}
-
-function calcHours(start: Date | null, end: Date | null) {
-  if (!start || !end) return null;
-  return ((end.getTime() - start.getTime()) / (1000 * 60 * 60)).toFixed(1);
-}
-
-function totalHours(
-  morningIn: Date | null,
-  morningOut: Date | null,
-  afternoonIn: Date | null,
-  afternoonOut: Date | null,
-) {
-  const morningHours = calcHours(morningIn, morningOut);
-  const afternoonHours = calcHours(afternoonIn, afternoonOut);
-  return morningHours && afternoonHours
-    ? (parseFloat(morningHours) + parseFloat(afternoonHours)).toFixed(1)
-    : (morningHours ?? afternoonHours ?? null);
-}
+import { HoursBadge } from "../hours-badge";
 
 export default async function AttendanceHistoryPage() {
   const user = await getCurrentUser();
   const records = await getAllAttendance();
+
+  const days = records.map((record) => ({ record, day: computeDayHours(record) }));
 
   const roleLabel = (role: string) => {
     const map: Record<string, string> = {
@@ -45,11 +30,13 @@ export default async function AttendanceHistoryPage() {
   return (
     <div className="space-y-6">
       <div className="min-w-0">
-        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">Historial de Asistencia</h2>
+        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl dark:text-zinc-50">
+          Historial de Horas Prácticas
+        </h2>
         <p className="text-sm text-zinc-500">
           {user?.role === "SUPPORT" || user?.role === "ADMIN"
-            ? "Registro de todos los practicantes"
-            : "Tu historial de asistencia"}
+            ? "Registro de horas prácticas de todos los practicantes"
+            : "Tu historial de horas prácticas"}
         </p>
       </div>
 
@@ -76,9 +63,7 @@ export default async function AttendanceHistoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {records.map((record) => {
-                    const total = totalHours(record.morningIn, record.morningOut, record.afternoonIn, record.afternoonOut);
-
+                  {days.map(({ record, day }) => {
                     return (
                       <tr
                         key={record.id}
@@ -94,18 +79,14 @@ export default async function AttendanceHistoryPage() {
                           </td>
                         )}
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">
-                          {record.date.toLocaleDateString("es-MX")}
+                          {formatDate(record.date)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.morningOut)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.afternoonIn)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-zinc-500">{formatTime(record.afternoonOut)}</td>
-                        <td className="px-4 py-3">
-                          {total ? (
-                            <Badge variant="resolved">{total}h</Badge>
-                          ) : (
-                            <Badge variant="default">--</Badge>
-                          )}
+                        <td className="px-4 py-3 text-right">
+                          <HoursBadge day={day} />
                         </td>
                       </tr>
                     );
@@ -116,8 +97,7 @@ export default async function AttendanceHistoryPage() {
           </Card>
 
           <div className="space-y-3 sm:hidden">
-            {records.map((record) => {
-              const total = totalHours(record.morningIn, record.morningOut, record.afternoonIn, record.afternoonOut);
+            {days.map(({ record, day }) => {
               const showUser = user?.role === "SUPPORT" || user?.role === "ADMIN";
 
               return (
@@ -133,26 +113,28 @@ export default async function AttendanceHistoryPage() {
                           />
                         )}
                         <p className="text-xs text-zinc-500">
-                          {record.date.toLocaleDateString("es-MX")}
+                          {formatDate(record.date)}
                         </p>
                       </div>
-                      {total ? (
-                        <Badge variant="resolved">{total}h</Badge>
-                      ) : (
-                        <Badge variant="default">--</Badge>
-                      )}
+                      <HoursBadge day={day} />
                     </div>
                     <div className="grid grid-cols-2 gap-3 border-t border-zinc-100 pt-3 text-xs dark:border-zinc-800">
                       <div>
                         <p className="text-zinc-500">Mañana</p>
                         <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">
-                          {formatTime(record.morningIn)} → {formatTime(record.morningOut)}
+                          {formatShiftRange({
+                            start: record.morningIn,
+                            end: record.morningOut,
+                          })}
                         </p>
                       </div>
                       <div>
                         <p className="text-zinc-500">Tarde</p>
                         <p className="mt-0.5 text-zinc-900 dark:text-zinc-100">
-                          {formatTime(record.afternoonIn)} → {formatTime(record.afternoonOut)}
+                          {formatShiftRange({
+                            start: record.afternoonIn,
+                            end: record.afternoonOut,
+                          })}
                         </p>
                       </div>
                     </div>

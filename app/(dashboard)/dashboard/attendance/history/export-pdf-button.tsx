@@ -3,18 +3,10 @@
 import { useState } from "react";
 import { Button } from "@/app/src/components/ui/button";
 import { getAllAttendanceByUser } from "@/app/src/lib/actions/attendance";
+import { computeDayHours, formatHours } from "@/app/src/lib/attendance-hours";
+import { formatDate, formatDateLong, formatTime } from "@/app/src/lib/date-format";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-function formatTime(date: Date | string | null) {
-  if (!date) return "--:--";
-  return new Date(date).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
-}
-
-function calcHours(start: Date | string | null, end: Date | string | null) {
-  if (!start || !end) return null;
-  return ((new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60 * 60)).toFixed(1);
-}
 
 export function ExportPdfButton({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false);
@@ -37,9 +29,13 @@ export function ExportPdfButton({ userId }: { userId: string }) {
 
       const pageWidth = doc.internal.pageSize.getWidth();
 
+      const days = records.map((r) => ({ record: r, day: computeDayHours(r) }));
+      const totalMinutes = days.reduce((acc, { day }) => acc + day.totalMinutes, 0);
+      const incomplete = days.filter(({ day }) => day.hasOpenShift).length;
+
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.text("Reporte de Asistencia", 14, 15);
+      doc.text("Reporte de Horas Prácticas", 14, 15);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
@@ -47,36 +43,32 @@ export function ExportPdfButton({ userId }: { userId: string }) {
       doc.text(`Email: ${user.email}`, 14, 29);
       doc.text(`Rol: ${user.role}`, 14, 35);
       doc.text(`Total de registros: ${records.length}`, 14, 41);
+      doc.text(
+        `Total de horas: ${formatHours(Math.round((totalMinutes / 60) * 100) / 100)} h (${totalMinutes} min)`,
+        14,
+        47,
+      );
+      doc.text(`D\u00edas incompletos: ${incomplete}`, 14, 53);
 
-      const now = new Date().toLocaleDateString("es-MX", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      const now = formatDateLong(new Date());
       doc.setFontSize(9);
       doc.text(`Generado el ${now}`, pageWidth - 14, 15, { align: "right" });
 
-      const rows = records.map((r) => {
-        const morningHours = calcHours(r.morningIn, r.morningOut);
-        const afternoonHours = calcHours(r.afternoonIn, r.afternoonOut);
-        const total =
-          morningHours && afternoonHours
-            ? (parseFloat(morningHours) + parseFloat(afternoonHours)).toFixed(1)
-            : morningHours ?? afternoonHours ?? "--";
-
-        return [
-          new Date(r.date).toLocaleDateString("es-MX"),
-          formatTime(r.morningIn),
-          formatTime(r.morningOut),
-          formatTime(r.afternoonIn),
-          formatTime(r.afternoonOut),
-          `${total}h`,
-        ];
-      });
+      const rows = days.map(({ record: r, day }) => [
+        formatDate(r.date),
+        formatTime(r.morningIn),
+        formatTime(r.morningOut),
+        formatTime(r.afternoonIn),
+        formatTime(r.afternoonOut),
+        day.totalHours === null ? "--" : formatHours(day.totalHours),
+        day.hasOpenShift ? "Incompleto" : "",
+      ]);
 
       autoTable(doc, {
-        startY: 47,
-        head: [["Fecha", "Entrada M.", "Salida M.", "Entrada T.", "Salida T.", "Horas"]],
+        startY: 60,
+        head: [
+          ["Fecha", "Entrada M.", "Salida M.", "Entrada T.", "Salida T.", "Horas", "Estado"],
+        ],
         body: rows,
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [30, 30, 30] },
@@ -84,7 +76,7 @@ export function ExportPdfButton({ userId }: { userId: string }) {
         margin: { left: 14, right: 14 },
       });
 
-      doc.save(`asistencia_${user.name.replace(/\s+/g, "_")}.pdf`);
+      doc.save(`horas_practicas_${user.name.replace(/\s+/g, "_")}.pdf`);
     } catch (error) {
       console.error("Error generando PDF:", error);
     }

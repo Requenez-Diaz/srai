@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Badge } from "@/app/src/components/ui/badge";
 import { Button } from "@/app/src/components/ui/button";
 import { getAttendanceByUser } from "@/app/src/lib/actions/attendance";
+import { computeDayHours, formatHours } from "@/app/src/lib/attendance-hours";
+import { formatDate, formatTime } from "@/app/src/lib/date-format";
 import { ExportPdfButton } from "./export-pdf-button";
 
 type AttendanceRecord = {
@@ -14,22 +16,6 @@ type AttendanceRecord = {
   afternoonIn: Date | null;
   afternoonOut: Date | null;
 };
-
-function formatTime(date: Date | null) {
-  if (!date) return "--:--";
-  return new Date(date).toLocaleTimeString("es-MX", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function calcHours(start: Date | null, end: Date | null) {
-  if (!start || !end) return null;
-  return (
-    (new Date(end).getTime() - new Date(start).getTime()) /
-    (1000 * 60 * 60)
-  ).toFixed(1);
-}
 
 export function AttendanceModal({
   userId,
@@ -132,21 +118,7 @@ export function AttendanceModal({
                       </thead>
                       <tbody>
                         {data.records.map((record) => {
-                          const morningHours = calcHours(
-                            record.morningIn,
-                            record.morningOut,
-                          );
-                          const afternoonHours = calcHours(
-                            record.afternoonIn,
-                            record.afternoonOut,
-                          );
-                          const total =
-                            morningHours && afternoonHours
-                              ? (
-                                  parseFloat(morningHours) +
-                                  parseFloat(afternoonHours)
-                                ).toFixed(1)
-                              : (morningHours ?? afternoonHours ?? null);
+                          const day = computeDayHours(record);
 
                           return (
                             <tr
@@ -154,25 +126,33 @@ export function AttendanceModal({
                               className='border-b border-zinc-100 dark:border-zinc-800'
                             >
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {new Date(record.date).toLocaleDateString(
-                                  'es-MX',
-                                )}
+                                {formatDate(record.date)}
                               </td>
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {formatTime(record.morningIn)}
+                                {day.morning.start
+                                  ? formatTime(day.morning.start)
+                                  : "--:--"}
                               </td>
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {formatTime(record.morningOut)}
+                                {day.morning.end
+                                  ? formatTime(day.morning.end)
+                                  : "--:--"}
                               </td>
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {formatTime(record.afternoonIn)}
+                                {day.afternoon.start
+                                  ? formatTime(day.afternoon.start)
+                                  : "--:--"}
                               </td>
                               <td className='px-3 py-2 whitespace-nowrap text-zinc-500'>
-                                {formatTime(record.afternoonOut)}
+                                {day.afternoon.end
+                                  ? formatTime(day.afternoon.end)
+                                  : "--:--"}
                               </td>
                               <td className='px-3 py-2'>
-                                {total ? (
-                                  <Badge variant='resolved'>{total}h</Badge>
+                                {day.totalHours !== null ? (
+                                  <Badge variant='resolved'>
+                                    {formatHours(day.totalHours)}h
+                                  </Badge>
                                 ) : (
                                   <Badge variant='default'>--</Badge>
                                 )}

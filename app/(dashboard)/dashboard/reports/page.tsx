@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/app/src/lib/auth";
 import { getActivityReport, getIssueReport } from "@/app/src/lib/actions/reports";
+import { formatDateTime } from "@/app/src/lib/date-format";
 import { Button } from "@/app/src/components/ui/button";
 import {
   ACTIVITY_TYPE_LABELS,
@@ -180,7 +181,7 @@ export default async function ReportsPage({
             id: entry.id,
             title: entry.title,
             href: `/dashboard/issues/${entry.id}`,
-            subtitle: `${entry.createdAt.toLocaleString("es-MX")} · ${entry.location} · Reportada por ${entry.reportedBy}${entry.assignedTo ? ` · Asignada a ${entry.assignedTo}` : ""}`,
+            subtitle: `${formatDateTime(entry.createdAt)} · ${entry.location} · Reportada por ${entry.reportedBy}${entry.assignedTo ? ` · Asignada a ${entry.assignedTo}` : ""}`,
             badges: [entry.statusLabel, entry.priorityLabel],
             badgeTone: "default",
           }))}
@@ -266,7 +267,7 @@ export default async function ReportsPage({
           id: entry.id,
           title: entry.title,
           href: `/dashboard/activities/${entry.id}`,
-          subtitle: `${entry.startDate.toLocaleString("es-MX")} · ${entry.location} · ${entry.organizer}`,
+          subtitle: `${formatDateTime(entry.startDate)} · ${entry.location} · ${entry.organizer}`,
           badges: [entry.typeLabel, `${entry.hours}h`],
           badgeTone: "resolved",
         }))}

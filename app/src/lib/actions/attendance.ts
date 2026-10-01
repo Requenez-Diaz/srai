@@ -3,14 +3,14 @@
 import { revalidatePath } from "next/cache";
 import db from "@/app/src/lib/db";
 import { getCurrentUser } from "@/app/src/lib/auth";
+import { getTodayDbDate } from "@/app/src/lib/date-format";
 
 export async function getTodayAttendance() {
   const user = await getCurrentUser();
 
   if (!user) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayDbDate();
 
   return db.attendance.findUnique({
     where: {
@@ -27,8 +27,7 @@ export async function registerMorningIn() {
 
   if (!user) return;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayDbDate();
 
   await db.attendance.upsert({
     where: {
@@ -55,8 +54,7 @@ export async function registerMorningOut() {
 
   if (!user) return;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayDbDate();
 
   const existing = await db.attendance.findUnique({
     where: {
@@ -89,8 +87,7 @@ export async function registerAfternoonIn() {
 
   if (!user) return;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayDbDate();
 
   await db.attendance.upsert({
     where: {
@@ -117,8 +114,7 @@ export async function registerAfternoonOut() {
 
   if (!user) return;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayDbDate();
 
   const existing = await db.attendance.findUnique({
     where: {
